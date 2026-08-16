@@ -1,0 +1,30 @@
+---
+description: Changelog stays short; code commit messages stay detailed.
+alwaysApply: true
+---
+
+# Git and changelog
+
+## Changelog (`CHANGELOG.md`)
+
+Write **simple English**, one line per change, newest first.
+
+Use a label, then a short fact:
+
+- `Bugfix - Parser was broken; valid in-game codes failed the checksum`
+- `Feature - Import several share codes one after another`
+- `Change - Import no longer stops at 10 boards`
+- `Docs - Added evyx.gg to the resource list`
+
+Put work that is not in a tagged release under `## Unreleased`. Move those lines into the version section when a `v*` tag goes out.
+
+Do **not** paste full commit messages into the changelog.
+
+## Code commits
+
+Keep commit messages **detailed**. Explain why the change exists, not only what files moved.
+
+Good: the body can be several sentences (decoder table, folder limits, CI, and so on).
+Bad: only `fix parser` with no context.
+
+The changelog line and the commit message are different on purpose: glanceable vs. complete.

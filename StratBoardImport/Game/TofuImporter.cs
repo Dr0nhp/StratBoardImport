@@ -83,12 +83,13 @@ public static unsafe class TofuImporter
                 }
             }
 
-            var created = CreateBoard(tofu, board, code.Name);
+            var created = CreateBoard(tofu, board, code.Name, folderIndex);
             if (created == null)
                 continue;
 
-            if (folderIndex != null)
+            if (folderIndex != null && IsRootBoard(tofu, created->Index))
             {
+                var rootIndex = created->Index;
                 var copy = tofu->CopyBoardToFolder(TofuType.Saved, created, folderIndex.Value);
                 if (copy == null)
                 {
@@ -99,14 +100,19 @@ public static unsafe class TofuImporter
 
                 if (copy != null)
                 {
-                    if (!TryDeleteBoard(tofu, created))
-                        Plugin.Log.Warning("[SBI] Copied a board into a folder but could not remove the root duplicate.");
-                    inFolders++;
+                    if (TryDeleteRootBoard(tofu, rootIndex))
+                        inFolders++;
+                    else
+                        Plugin.Log.Warning($"[SBI] Copied a board into a folder but could not remove the root duplicate (index {rootIndex}).");
                 }
                 else
                 {
                     Plugin.Log.Warning("[SBI] CopyBoardToFolder failed; board was left in the Saved List root.");
                 }
+            }
+            else if (folderIndex != null)
+            {
+                inFolders++;
             }
 
             imported++;
@@ -148,7 +154,7 @@ public static unsafe class TofuImporter
         return ImportResult.Ok(Loc.Format(L.ImportNativeOk, lastName ?? "Board"));
     }
 
-    private static TofuBoardEntry* CreateBoard(TofuModule* tofu, DecodedBoard board, string? fallbackName)
+    private static TofuBoardEntry* CreateBoard(TofuModule* tofu, DecodedBoard board, string? fallbackName, uint? folderIndex)
     {
         var entry = new TofuBoardEntry
         {
@@ -183,7 +189,18 @@ public static unsafe class TofuImporter
             entry.Objects[i] = obj;
         }
 
-        return tofu->CreateBoard(TofuType.Saved, &entry, true);
+        var notInFolder = true;
+        if (folderIndex != null)
+        {
+            var folder = tofu->GetFolderAtUIIndex(TofuType.Saved, folderIndex.Value);
+            if (folder != null && folder->IsValid)
+            {
+                entry.Folder = (byte)(folder->Index + 1);
+                notInFolder = false;
+            }
+        }
+
+        return tofu->CreateBoard(TofuType.Saved, &entry, notInFolder);
     }
 
     private static uint? EnsureFolderHasSpace(
@@ -262,25 +279,28 @@ public static unsafe class TofuImporter
         return null;
     }
 
-    private static bool TryDeleteBoard(TofuModule* tofu, TofuBoardEntry* board)
+    private static bool IsRootBoard(TofuModule* tofu, uint boardIndex)
     {
-        if (board == null || !board->IsValid)
+        if (!tofu->IsItemValid(TofuType.Saved, TofuItem.Board, boardIndex))
             return false;
 
-        var mixedIndex = tofu->GetFolderIndexByBoardIndex(TofuType.Saved, board->Index);
-        if (mixedIndex >= 0 && tofu->GetBoardAtUIIndex(TofuType.Saved, (uint)mixedIndex) == board)
-            return tofu->DeleteItemAndContents(TofuType.Saved, (uint)mixedIndex);
+        var folderOrSelf = tofu->GetBoardFolderIndexByBoardIndex(TofuType.Saved, boardIndex);
+        return folderOrSelf == (int)boardIndex;
+    }
 
-        var mixedCount = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board)
-                         + tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
-        for (uint i = 0; i < mixedCount + 4; i++)
-        {
-            if (tofu->GetBoardAtUIIndex(TofuType.Saved, i) != board)
-                continue;
-            return tofu->DeleteItemAndContents(TofuType.Saved, i);
-        }
+    private static bool TryDeleteRootBoard(TofuModule* tofu, byte boardIndex)
+    {
+        if (!IsRootBoard(tofu, boardIndex))
+            return !tofu->IsItemValid(TofuType.Saved, TofuItem.Board, boardIndex);
 
-        Plugin.Log.Warning("[SBI] Could not find the root board to delete after copying it into a folder.");
+        var mixedIndex = tofu->GetFolderIndexByBoardIndex(TofuType.Saved, boardIndex);
+        if (mixedIndex >= 0)
+            tofu->DeleteItemAndContents(TofuType.Saved, (uint)mixedIndex);
+
+        if (!tofu->IsItemValid(TofuType.Saved, TofuItem.Board, boardIndex))
+            return true;
+
+        Plugin.Log.Warning($"[SBI] Could not delete root board at index {boardIndex}.");
         return false;
     }
 

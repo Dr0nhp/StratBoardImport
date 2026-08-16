@@ -1,6 +1,8 @@
 {
   "window.title": "Strategy Board Import",
-  "ui.header": "Paste Strategy Board share codes here. The plugin writes them into the Saved List (the vanilla field truncates long folder codes). You can also wipe every saved board at once — the game has no bulk delete.",
+  "ui.header": "Paste [stgy:] share codes, then import.",
+  "ui.tab_import": "Import",
+  "ui.tab_settings": "Settings",
   "ui.from_clipboard": "From clipboard",
   "ui.check": "Check",
   "ui.clear": "Clear",
@@ -26,6 +28,7 @@
   "ui.delete_all_saved_confirm": "Click again to delete {0} boards and {1} folders",
   "ui.delete_all_saved_cancel": "Cancel",
   "ui.delete_all_saved_help": "Clears the Saved List (boards and folders). Shared List is not touched. This cannot be undone.",
+  "ui.saved_list_count": "Saved List: {0}/{1}",
   "ui.settings": "Settings",
   "ui.language": "Language",
   "ui.language_auto": "Auto ({0})",

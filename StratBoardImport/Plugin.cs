@@ -49,7 +49,7 @@ public sealed class Plugin : IDalamudPlugin
 
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
-        PluginInterface.UiBuilder.OpenConfigUi += ToggleMainUi;
+        PluginInterface.UiBuilder.OpenConfigUi += OpenConfigUi;
         Framework.Update += OnFrameworkUpdate;
 
         Log.Information(Loc.Get(L.LogLoaded));
@@ -81,7 +81,7 @@ public sealed class Plugin : IDalamudPlugin
         FolderJob.Cancel();
         PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi;
-        PluginInterface.UiBuilder.OpenConfigUi -= ToggleMainUi;
+        PluginInterface.UiBuilder.OpenConfigUi -= OpenConfigUi;
         windowSystem.RemoveAllWindows();
         mainWindow.Dispose();
         CommandManager.RemoveHandler(CommandName);
@@ -125,4 +125,6 @@ public sealed class Plugin : IDalamudPlugin
     }
 
     public void ToggleMainUi() => mainWindow.Toggle();
+
+    private void OpenConfigUi() => mainWindow.OpenSettings();
 }

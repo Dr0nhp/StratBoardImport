@@ -1,6 +1,8 @@
 {
   "window.title": "Strategy Board Import",
-  "ui.header": "Collez ici les codes Strategy Board. Le plugin les écrit dans la liste sauvegardée (le champ du jeu coupe les longs codes de dossier). Vous pouvez aussi vider toute la liste — le jeu n’a pas de suppression en masse.",
+  "ui.header": "Collez des codes [stgy:], puis importez.",
+  "ui.tab_import": "Import",
+  "ui.tab_settings": "Paramètres",
   "ui.from_clipboard": "Depuis le presse-papiers",
   "ui.check": "Vérifier",
   "ui.clear": "Effacer",
@@ -26,6 +28,7 @@
   "ui.delete_all_saved_confirm": "Cliquer encore : supprimer {0} plateaux et {1} dossiers",
   "ui.delete_all_saved_cancel": "Annuler",
   "ui.delete_all_saved_help": "Vide la liste sauvegardée (plateaux et dossiers). La liste partagée n’est pas touchée. Irréversible.",
+  "ui.saved_list_count": "Liste sauvegardée : {0}/{1}",
   "ui.settings": "Paramètres",
   "ui.language": "Langue",
   "ui.language_auto": "Auto ({0})",

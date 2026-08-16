@@ -1,6 +1,8 @@
 {
   "window.title": "Strategy Board Import",
-  "ui.header": "Strategy-Board-Share-Codes hier einfügen. Das Plugin schreibt sie in die Saved List (das Spiel-Feld schneidet lange Ordner-Codes ab). Außerdem kann die gesamte Saved List geleert werden — das Spiel hat kein Massenlöschen.",
+  "ui.header": "[stgy:]-Codes einfügen, dann importieren.",
+  "ui.tab_import": "Import",
+  "ui.tab_settings": "Einstellungen",
   "ui.from_clipboard": "Aus Zwischenablage",
   "ui.check": "Prüfen",
   "ui.clear": "Leeren",
@@ -26,6 +28,7 @@
   "ui.delete_all_saved_confirm": "Nochmal klicken: {0} Boards und {1} Ordner löschen",
   "ui.delete_all_saved_cancel": "Abbrechen",
   "ui.delete_all_saved_help": "Leert die Saved List (Boards und Ordner). Die Shared List bleibt. Das kann nicht rückgängig gemacht werden.",
+  "ui.saved_list_count": "Saved List: {0}/{1}",
   "ui.settings": "Einstellungen",
   "ui.language": "Sprache",
   "ui.language_auto": "Automatisch ({0})",

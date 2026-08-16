@@ -8,6 +8,8 @@ public static class L
     public const string WindowTitle = "window.title";
 
     public const string UiHeader = "ui.header";
+    public const string UiTabImport = "ui.tab_import";
+    public const string UiTabSettings = "ui.tab_settings";
     public const string UiFromClipboard = "ui.from_clipboard";
     public const string UiCheck = "ui.check";
     public const string UiClear = "ui.clear";
@@ -33,6 +35,7 @@ public static class L
     public const string UiDeleteAllSavedConfirm = "ui.delete_all_saved_confirm";
     public const string UiDeleteAllSavedCancel = "ui.delete_all_saved_cancel";
     public const string UiDeleteAllSavedHelp = "ui.delete_all_saved_help";
+    public const string UiSavedListCount = "ui.saved_list_count";
     public const string UiSettings = "ui.settings";
     public const string UiShowChatMessages = "ui.show_chat_messages";
     public const string UiShowChatMessagesHelp = "ui.show_chat_messages_help";

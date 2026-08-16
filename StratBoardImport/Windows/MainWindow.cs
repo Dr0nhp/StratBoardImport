@@ -21,18 +21,20 @@ public sealed class MainWindow : Window, IDisposable
     private string folderName = string.Empty;
     private string lastJobStatus = string.Empty;
     private bool confirmDeleteSaved;
+    private bool focusSettingsTab;
 
     public MainWindow(Plugin plugin)
-        : base("Strategy Board Import##StratBoardImport")
+        : base("Strategy Board Import###StratBoardImport")
     {
         this.plugin = plugin;
         status = Loc.Get(L.StatusPasteHint);
+        RespectCloseHotkey = true;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(520, 480),
+            MinimumSize = new Vector2(420, 420),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
-        Size = new Vector2(640, 640);
+        Size = new Vector2(520, 560);
         SizeCondition = ImGuiCond.FirstUseEver;
     }
 
@@ -40,18 +42,44 @@ public sealed class MainWindow : Window, IDisposable
     {
     }
 
+    public void OpenSettings()
+    {
+        IsOpen = true;
+        focusSettingsTab = true;
+    }
+
     public override void PreDraw()
     {
-        WindowName = Loc.Get(L.WindowTitle) + "##StratBoardImport";
+        WindowName = Loc.Get(L.WindowTitle) + "###StratBoardImport";
     }
 
     public override void Draw()
     {
         SyncFolderJobStatus();
 
-        ImGui.TextWrapped(Loc.Get(L.UiHeader));
+        using var tabBar = ImRaii.TabBar("##sbi-tabs");
+        if (!tabBar.Success)
+            return;
 
-        ImGuiHelpers.ScaledDummy(6);
+        using (var tab = ImRaii.TabItem(Loc.Get(L.UiTabImport)))
+        {
+            if (tab.Success)
+                DrawImportTab();
+        }
+
+        var settingsFlags = focusSettingsTab ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None;
+        focusSettingsTab = false;
+        if (ImGui.BeginTabItem(Loc.Get(L.UiTabSettings), settingsFlags))
+        {
+            DrawSettings();
+            ImGui.EndTabItem();
+        }
+    }
+
+    private void DrawImportTab()
+    {
+        ImGui.TextDisabled(Loc.Get(L.UiHeader));
+        ImGuiHelpers.ScaledDummy(4);
 
         if (ImGui.Button(Loc.Get(L.UiFromClipboard)))
         {
@@ -70,30 +98,28 @@ public sealed class MainWindow : Window, IDisposable
             parsed = [];
             selectedIndex = 0;
             folderName = string.Empty;
+            confirmDeleteSaved = false;
             SetStatus(Loc.Get(L.StatusCleared), false);
         }
 
-        ImGui.SameLine();
-        if (ImGui.Button(Loc.Get(L.UiOpenStrategyBoard)))
-            plugin.Importer.OpenStrategyBoard();
-
         ImGuiHelpers.ScaledDummy(4);
         ImGui.InputTextMultiline("##sharecode", ref input, 4_000_000,
-            new Vector2(-1, 140 * ImGuiHelpers.GlobalScale));
+            new Vector2(-1, 110 * ImGuiHelpers.GlobalScale));
 
         DrawParsedList();
-        ImGuiHelpers.ScaledDummy(4);
-        DrawImportActions();
-        DrawFolderImport();
+        ImGuiHelpers.ScaledDummy(6);
+        DrawPrimaryActions();
         ImGuiHelpers.ScaledDummy(8);
         DrawStatus();
-        DrawSettings();
+        ImGuiHelpers.ScaledDummy(6);
+        ImGui.Separator();
+        DrawSavedListRow();
     }
 
     private void DrawParsedList()
     {
         ImGui.Text(Loc.Format(L.UiFoundCodes, parsed.Count, input.Length));
-        using var child = ImRaii.Child("parsed-codes", new Vector2(-1, 150 * ImGuiHelpers.GlobalScale), true);
+        using var child = ImRaii.Child("parsed-codes", new Vector2(-1, 140 * ImGuiHelpers.GlobalScale), true);
         if (!child.Success)
             return;
 
@@ -113,69 +139,11 @@ public sealed class MainWindow : Window, IDisposable
         }
     }
 
-    private void DrawImportActions()
+    private void DrawPrimaryActions()
     {
-        var canImportSelected = selectedIndex >= 0 && selectedIndex < parsed.Count && parsed[selectedIndex].IsValid;
-        var validCount = parsed.Count(c => c.IsValid);
-
-        using (ImRaii.Disabled(!canImportSelected))
-        {
-            if (ImGui.Button(Loc.Get(L.UiImportSelected)))
-                ImportOne(parsed[selectedIndex].Code);
-        }
-
-        ImGui.SameLine();
-        using (ImRaii.Disabled(validCount == 0))
-        {
-            if (ImGui.Button(validCount <= 1 ? Loc.Get(L.UiImport) : Loc.Format(L.UiCopyAll, validCount)))
-            {
-                if (validCount == 1)
-                {
-                    var only = parsed.First(c => c.IsValid);
-                    ImportOne(only.Code);
-                }
-                else
-                {
-                    CopyAllValid();
-                }
-            }
-        }
-
-        ImGui.SameLine();
-        using (ImRaii.Disabled(validCount == 0))
-        {
-            if (ImGui.Button(Loc.Get(L.UiCopySelected)))
-            {
-                ImGui.SetClipboardText(parsed[selectedIndex].Code);
-                SetStatus(Loc.Get(L.StatusCopiedOne), false);
-            }
-        }
-
-        ImGui.SameLine();
-        using (ImRaii.Disabled(string.IsNullOrWhiteSpace(input)))
-        {
-            if (ImGui.Button(Loc.Get(L.UiImportRaw)))
-                ImportOne(input.Trim());
-        }
-
-        ImGui.TextWrapped(Loc.Get(L.UiSingleImportHelp));
-    }
-
-    private void DrawFolderImport()
-    {
-        var validCount = parsed.Count(c => c.IsValid);
         var job = plugin.FolderJob;
-
-        ImGuiHelpers.ScaledDummy(6);
-        ImGui.Separator();
-        ImGui.Text(Loc.Get(L.UiFolderImport));
-        ImGui.TextWrapped(Loc.Format(L.UiFolderImportHelp, FolderImportJob.MaxSavedBoards, FolderImportJob.MaxBoardsPerFolder));
-
-        ImGui.SetNextItemWidth(280 * ImGuiHelpers.GlobalScale);
-        using (ImRaii.Disabled(job.IsRunning))
-        {
-            ImGui.InputText(Loc.Get(L.UiFolderName), ref folderName, 64);
-        }
+        var validCount = parsed.Count(c => c.IsValid);
+        var canImportSelected = selectedIndex >= 0 && selectedIndex < parsed.Count && parsed[selectedIndex].IsValid;
 
         if (job.IsRunning)
         {
@@ -186,44 +154,75 @@ public sealed class MainWindow : Window, IDisposable
             }
 
             if (job.TotalCount > 0)
-            {
                 ImGui.ProgressBar(job.ProgressFraction, new Vector2(-1, 0), job.ProgressLabel);
-            }
+            return;
         }
-        else
+
+        if (validCount >= 2)
         {
-            var label = validCount >= 2
-                ? Loc.Format(L.UiImportAllN, validCount)
-                : Loc.Get(L.UiImportAll);
-            using (ImRaii.Disabled(validCount < 2))
-            {
-                if (ImGui.Button(label))
-                {
-                    var name = string.IsNullOrWhiteSpace(folderName)
-                        ? FolderImportJob.DefaultFolderName(parsed)
-                        : folderName;
-                    folderName = name;
-                    if (job.Start(parsed, name))
-                        SetStatus(job.Status, false);
-                    else
-                        SetStatus(job.Status, true);
-                }
-            }
-
-            if (validCount < 2)
-                ImGui.TextDisabled(Loc.Get(L.UiNeedTwoCodes));
+            ImGui.SetNextItemWidth(280 * ImGuiHelpers.GlobalScale);
+            ImGui.InputText(Loc.Get(L.UiFolderName), ref folderName, 64);
+            Tooltip(L.UiFolderImportHelp, FolderImportJob.MaxSavedBoards, FolderImportJob.MaxBoardsPerFolder);
         }
 
-        DrawDeleteAllSaved();
+        using (ImRaii.Disabled(validCount == 0))
+        {
+            var primary = validCount >= 2
+                ? Loc.Format(L.UiImportAllN, validCount)
+                : Loc.Get(L.UiImport);
+            if (ImGui.Button(primary))
+                RunPrimaryImport(validCount);
+        }
+
+        if (validCount >= 2)
+        {
+            ImGui.SameLine();
+            using (ImRaii.Disabled(!canImportSelected))
+            {
+                if (ImGui.Button(Loc.Get(L.UiImportSelected)))
+                    ImportOne(parsed[selectedIndex].Code);
+            }
+        }
+
+        ImGui.SameLine();
+        using (ImRaii.Disabled(!canImportSelected))
+        {
+            if (ImGui.Button(Loc.Get(L.UiCopySelected)))
+            {
+                ImGui.SetClipboardText(parsed[selectedIndex].Code);
+                SetStatus(Loc.Get(L.StatusCopiedOne), false);
+            }
+        }
     }
 
-    private void DrawDeleteAllSaved()
+    private void RunPrimaryImport(int validCount)
+    {
+        if (validCount <= 1)
+        {
+            var only = parsed.FirstOrDefault(c => c.IsValid);
+            if (only != null)
+                ImportOne(only.Code);
+            return;
+        }
+
+        var name = string.IsNullOrWhiteSpace(folderName)
+            ? FolderImportJob.DefaultFolderName(parsed)
+            : folderName;
+        folderName = name;
+        if (plugin.FolderJob.Start(parsed, name))
+            SetStatus(plugin.FolderJob.Status, false);
+        else
+            SetStatus(plugin.FolderJob.Status, true);
+    }
+
+    private void DrawSavedListRow()
     {
         var job = plugin.FolderJob;
         var (boards, folders) = TofuImporter.GetSavedCounts();
         var empty = boards == 0 && folders == 0;
 
-        ImGuiHelpers.ScaledDummy(4);
+        ImGui.Text(Loc.Format(L.UiSavedListCount, boards, FolderImportJob.MaxSavedBoards));
+
         if (confirmDeleteSaved)
         {
             ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.72f, 0.18f, 0.18f, 1f));
@@ -231,11 +230,10 @@ public sealed class MainWindow : Window, IDisposable
             ImGui.PushStyleColor(ImGuiCol.ButtonActive, new Vector4(0.55f, 0.12f, 0.12f, 1f));
             var clicked = false;
             using (ImRaii.Disabled(job.IsRunning || empty))
-            {
                 clicked = ImGui.Button(Loc.Format(L.UiDeleteAllSavedConfirm, boards, folders));
-            }
-
             ImGui.PopStyleColor(3);
+            Tooltip(L.UiDeleteAllSavedHelp);
+
             if (clicked)
             {
                 confirmDeleteSaved = false;
@@ -250,17 +248,16 @@ public sealed class MainWindow : Window, IDisposable
             ImGui.SameLine();
             if (ImGui.Button(Loc.Get(L.UiDeleteAllSavedCancel)))
                 confirmDeleteSaved = false;
-        }
-        else
-        {
-            using (ImRaii.Disabled(job.IsRunning || empty || !TofuImporter.IsAvailable))
-            {
-                if (ImGui.Button(Loc.Get(L.UiDeleteAllSaved)))
-                    confirmDeleteSaved = true;
-            }
+            return;
         }
 
-        ImGui.TextDisabled(Loc.Get(L.UiDeleteAllSavedHelp));
+        using (ImRaii.Disabled(job.IsRunning || empty || !TofuImporter.IsAvailable))
+        {
+            if (ImGui.Button(Loc.Get(L.UiDeleteAllSaved)))
+                confirmDeleteSaved = true;
+        }
+
+        Tooltip(L.UiDeleteAllSavedHelp);
     }
 
     private void DrawStatus()
@@ -276,11 +273,9 @@ public sealed class MainWindow : Window, IDisposable
 
     private void DrawSettings()
     {
-        if (!ImGui.CollapsingHeader(Loc.Get(L.UiSettings)))
-            return;
-
+        ImGuiHelpers.ScaledDummy(4);
         DrawLanguageCombo();
-        DrawHelp(L.UiLanguageHelp);
+        Tooltip(L.UiLanguageHelp);
 
         var showChat = plugin.Configuration.ShowChatMessages;
         if (ImGui.Checkbox(Loc.Get(L.UiShowChatMessages), ref showChat))
@@ -288,7 +283,20 @@ public sealed class MainWindow : Window, IDisposable
             plugin.Configuration.ShowChatMessages = showChat;
             plugin.Configuration.Save();
         }
-        DrawHelp(L.UiShowChatMessagesHelp);
+        Tooltip(L.UiShowChatMessagesHelp);
+
+        ImGuiHelpers.ScaledDummy(8);
+        if (ImGui.Button(Loc.Get(L.UiOpenStrategyBoard)))
+            plugin.Importer.OpenStrategyBoard();
+
+        ImGui.SameLine();
+        using (ImRaii.Disabled(string.IsNullOrWhiteSpace(input)))
+        {
+            if (ImGui.Button(Loc.Get(L.UiImportRaw)))
+                ImportOne(input.Trim());
+        }
+
+        Tooltip(L.UiSingleImportHelp);
     }
 
     private void DrawLanguageCombo()
@@ -313,12 +321,13 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.EndCombo();
     }
 
-    private static void DrawHelp(string key)
+    private static void Tooltip(string key, params object?[] args)
     {
-        ImGui.PushTextWrapPos();
-        ImGui.TextDisabled(Loc.Get(key));
-        ImGui.PopTextWrapPos();
-        ImGuiHelpers.ScaledDummy(4);
+        if (!ImGui.IsItemHovered())
+            return;
+
+        var text = args.Length == 0 ? Loc.Get(key) : Loc.Format(key, args);
+        ImGui.SetTooltip(text);
     }
 
     private void SetLanguage(string culture)
@@ -369,13 +378,6 @@ public sealed class MainWindow : Window, IDisposable
             Plugin.ChatPrint(result.Message);
         else
             Plugin.ChatPrintError(result.Message);
-    }
-
-    private void CopyAllValid()
-    {
-        var codes = parsed.Where(c => c.IsValid).Select(c => c.Code);
-        ImGui.SetClipboardText(string.Join("\n\n", codes));
-        SetStatus(Loc.Format(L.StatusCopiedAll, parsed.Count(c => c.IsValid)), false);
     }
 
     private void SyncFolderJobStatus()

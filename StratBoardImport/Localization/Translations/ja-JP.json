@@ -1,6 +1,8 @@
 {
   "window.title": "Strategy Board Import",
-  "ui.header": "ストラテジーボードの共有コードをここに貼り付けます。プラグインは保存リストへ直接書き込みます（ゲームの欄は長いフォルダーコードを切ります）。保存ボードを一括削除することもできます。ゲーム側に一括削除はありません。",
+  "ui.header": "[stgy:] コードを貼り付けてインポート。",
+  "ui.tab_import": "インポート",
+  "ui.tab_settings": "設定",
   "ui.from_clipboard": "クリップボードから",
   "ui.check": "確認",
   "ui.clear": "クリア",
@@ -26,6 +28,7 @@
   "ui.delete_all_saved_confirm": "もう一度クリック：ボード {0} 枚とフォルダー {1} 個を削除",
   "ui.delete_all_saved_cancel": "キャンセル",
   "ui.delete_all_saved_help": "保存リスト（ボードとフォルダー）を空にします。共有リストは対象外です。元に戻せません。",
+  "ui.saved_list_count": "保存リスト: {0}/{1}",
   "ui.settings": "設定",
   "ui.language": "言語",
   "ui.language_auto": "自動 ({0})",

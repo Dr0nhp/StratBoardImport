@@ -6,6 +6,11 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.4.0.0
+
+- Bugfix - Folder import no longer leaves a second copy of each board in the Saved List root
+- Change - Plugin window uses Import / Settings tabs, one primary import button, and hover help
+
 ## 1.3.1.0
 
 - Bugfix - Strategy Board reloads itself after import or delete if the window is already open

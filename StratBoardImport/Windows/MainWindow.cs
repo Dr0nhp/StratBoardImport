@@ -18,6 +18,8 @@ public sealed class MainWindow : Window, IDisposable
     private bool statusError;
     private int selectedIndex;
     private bool showAddonScan;
+    private string folderName = string.Empty;
+    private string lastJobStatus = string.Empty;
 
     public MainWindow(Plugin plugin)
         : base("Strategy Board Import##StratBoardImport")
@@ -25,10 +27,10 @@ public sealed class MainWindow : Window, IDisposable
         this.plugin = plugin;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(520, 420),
+            MinimumSize = new Vector2(520, 480),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
-        Size = new Vector2(640, 560);
+        Size = new Vector2(640, 640);
         SizeCondition = ImGuiCond.FirstUseEver;
     }
 
@@ -38,6 +40,8 @@ public sealed class MainWindow : Window, IDisposable
 
     public override void Draw()
     {
+        SyncFolderJobStatus();
+
         ImGui.TextWrapped(
             "Lange Strategy-Board-Codes (einzelne Boards oder Ordner mit mehreren Seiten) " +
             "hier einfügen. Das Plugin schreibt den vollständigen String in das Spiel-Importfeld " +
@@ -61,6 +65,7 @@ public sealed class MainWindow : Window, IDisposable
             input = string.Empty;
             parsed = [];
             selectedIndex = 0;
+            folderName = string.Empty;
             SetStatus("Eingabe geleert.", false);
         }
 
@@ -75,6 +80,7 @@ public sealed class MainWindow : Window, IDisposable
         DrawParsedList();
         ImGuiHelpers.ScaledDummy(4);
         DrawImportActions();
+        DrawFolderImport();
         ImGuiHelpers.ScaledDummy(8);
         DrawStatus();
         DrawSettings();
@@ -90,9 +96,10 @@ public sealed class MainWindow : Window, IDisposable
         for (var i = 0; i < parsed.Count; i++)
         {
             var code = parsed[i];
-            var label = code.IsValid
-                ? $"{i + 1}. {(string.IsNullOrEmpty(code.Name) ? "Unbenannt" : code.Name)}  ({code.Length} Zeichen, {code.ObjectCount} Objekte)"
-                : $"{i + 1}. Ungültig: {code.Error}";
+            var name = string.IsNullOrEmpty(code.Name) ? "Unbenannt" : code.Name;
+            var label = string.IsNullOrEmpty(code.Error)
+                ? $"{i + 1}. {name}  ({code.Length} Zeichen, {code.ObjectCount} Objekte)"
+                : $"{i + 1}. {name}  ({code.Length} Zeichen)  — {code.Error}";
 
             if (ImGui.Selectable(label, selectedIndex == i))
                 selectedIndex = i;
@@ -148,16 +155,78 @@ public sealed class MainWindow : Window, IDisposable
         }
 
         ImGui.TextWrapped(
-            "Ablauf: Strategy Board öffnen → Neue Strategie → Share-Code. " +
-            "Danach hier Importieren klicken. Bei mehreren Seiten den Dialog für jede Seite erneut öffnen " +
-            "oder den jeweiligen Code kopieren. „Roheingabe importieren“ sendet den kompletten Text ungekürzt, " +
-            "auch wenn die Prüfung fehlschlägt (z. B. Ordner-Codes).");
+            "Einzelimport: Strategy Board öffnen → Neue Strategie → Share-Code, dann hier Importieren. " +
+            "„Roheingabe importieren“ sendet den kompletten Text ungekürzt, auch wenn die Prüfung fehlschlägt.");
+    }
+
+    private void DrawFolderImport()
+    {
+        var validCount = parsed.Count(c => c.IsValid);
+        var job = plugin.FolderJob;
+
+        ImGuiHelpers.ScaledDummy(6);
+        ImGui.Separator();
+        ImGui.Text("Ordner-Import");
+        ImGui.TextWrapped(
+            "Das Spiel hat keine öffentliche Ordner-API. Lege den Ordner im Strategy Board an oder öffne ihn " +
+            "(Name wird in die Zwischenablage kopiert). Danach für jede Seite Neue Strategie → Share-Code öffnen. " +
+            "Das Plugin füllt den Code und bestätigt automatisch. " +
+            $"Saved List: bis {FolderImportJob.MaxSavedBoards} Boards. Ein Ordner: bis {FolderImportJob.MaxBoardsPerFolder}. " +
+            "Mehr als 10 Seiten: zweiten Ordner nutzen oder den Rest in der Saved List lassen.");
+
+        ImGui.SetNextItemWidth(280 * ImGuiHelpers.GlobalScale);
+        using (ImRaii.Disabled(job.IsRunning))
+        {
+            ImGui.InputText("Ordnername", ref folderName, 64);
+        }
+
+        if (job.IsRunning)
+        {
+            if (ImGui.Button("Ordner-Import abbrechen"))
+            {
+                job.Cancel();
+                SetStatus(job.Status, false);
+            }
+
+            if (job.TotalCount > 0)
+            {
+                ImGui.ProgressBar(job.ProgressFraction, new Vector2(-1, 0), job.ProgressLabel);
+            }
+        }
+        else
+        {
+            var label = validCount >= 2
+                ? $"Alle {validCount} Boards in Ordner importieren"
+                : "Alle Boards in Ordner importieren";
+            using (ImRaii.Disabled(validCount < 2))
+            {
+                if (ImGui.Button(label))
+                {
+                    var name = string.IsNullOrWhiteSpace(folderName)
+                        ? FolderImportJob.DefaultFolderName(parsed)
+                        : folderName;
+                    folderName = name;
+                    if (job.Start(parsed, name))
+                        SetStatus(job.Status, false);
+                    else
+                        SetStatus(job.Status, true);
+                }
+            }
+
+            if (validCount < 2)
+                ImGui.TextDisabled("Mindestens zwei gültige [stgy:]-Codes nötig.");
+        }
     }
 
     private void DrawStatus()
     {
         var color = statusError ? new Vector4(1f, 0.45f, 0.45f, 1f) : new Vector4(0.55f, 0.9f, 0.55f, 1f);
+        if (plugin.FolderJob.IsRunning)
+            color = new Vector4(0.95f, 0.85f, 0.4f, 1f);
+
+        ImGui.PushTextWrapPos();
         ImGui.TextColored(color, status);
+        ImGui.PopTextWrapPos();
     }
 
     private void DrawSettings()
@@ -204,6 +273,9 @@ public sealed class MainWindow : Window, IDisposable
         }
 
         var valid = parsed.Count(c => c.IsValid);
+        if (string.IsNullOrWhiteSpace(folderName) && valid > 0)
+            folderName = FolderImportJob.DefaultFolderName(parsed);
+
         SetStatus(valid == parsed.Count
             ? $"{parsed.Count} gültige(r) Share-Code(s) erkannt."
             : $"{valid}/{parsed.Count} Codes gültig. Ungültige Codes werden übersprungen.", valid == 0);
@@ -238,6 +310,17 @@ public sealed class MainWindow : Window, IDisposable
     private void RefreshAddonScan()
     {
         plugin.LastAddonScan = plugin.Importer.ListCandidateAddons();
+    }
+
+    private void SyncFolderJobStatus()
+    {
+        var job = plugin.FolderJob;
+        if (job.Status == lastJobStatus)
+            return;
+
+        lastJobStatus = job.Status;
+        if (!string.IsNullOrEmpty(job.Status))
+            SetStatus(job.Status, job.HasError);
     }
 
     private void SetStatus(string message, bool error)

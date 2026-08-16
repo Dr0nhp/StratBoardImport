@@ -8,7 +8,7 @@
     <Name>Strategy Board Import</Name>
     <InternalName>StratBoardImport</InternalName>
     <Punchline>Importiert auch sehr lange Strategy-Board-Share-Codes.</Punchline>
-    <Description>Fügt Strategy Boards aus Share-Codes ein, auch wenn der Code für das normale Importfeld zu lang ist. Ordner mit mehreren Seiten können als ein langer Code oder als mehrere [stgy:]-Codes eingefügt werden. Befehl: /sbi</Description>
+    <Description>Fügt Strategy Boards aus Share-Codes ein, auch wenn der Code für das normale Importfeld zu lang ist. Mehrere [stgy:]-Codes können nacheinander in einen Ordner importiert werden. Befehl: /sbi</Description>
     <RepoUrl>https://github.com/Dr0nhp/StratBoardImport</RepoUrl>
     <Tags>strategy;board;import;stgy;raid</Tags>
   </PropertyGroup>

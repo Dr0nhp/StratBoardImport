@@ -19,16 +19,20 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IChatGui ChatGui { get; private set; } = null!;
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
+    [PluginService] internal static IFramework Framework { get; private set; } = null!;
 
     public Configuration Configuration { get; }
     public GameImporter Importer { get; } = new();
+    public FolderImportJob FolderJob { get; } = new();
     public List<string> LastAddonScan { get; set; } = [];
+    internal static Plugin Instance { get; private set; } = null!;
 
     private readonly WindowSystem windowSystem = new("StratBoardImport");
     private readonly MainWindow mainWindow;
 
     public Plugin()
     {
+        Instance = this;
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
         mainWindow = new MainWindow(this);
         windowSystem.AddWindow(mainWindow);
@@ -41,12 +45,15 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleMainUi;
+        Framework.Update += OnFrameworkUpdate;
 
         Log.Information("Strategy Board Import geladen. Befehl: /sbi");
     }
 
     public void Dispose()
     {
+        Framework.Update -= OnFrameworkUpdate;
+        FolderJob.Cancel();
         PluginInterface.UiBuilder.Draw -= windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi -= ToggleMainUi;
         PluginInterface.UiBuilder.OpenConfigUi -= ToggleMainUi;
@@ -77,6 +84,11 @@ public sealed class Plugin : IDalamudPlugin
         }
 
         ToggleMainUi();
+    }
+
+    private void OnFrameworkUpdate(IFramework framework)
+    {
+        FolderJob.Tick();
     }
 
     public void ToggleMainUi() => mainWindow.Toggle();

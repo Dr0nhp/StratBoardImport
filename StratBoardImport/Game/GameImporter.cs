@@ -25,11 +25,18 @@ public sealed unsafe class GameImporter
     ];
 
     public ImportResult Import(string shareCode, bool autoConfirm, int confirmCallbackId)
+        => Import(shareCode, autoConfirm, confirmCallbackId, requireShareCodeDialog: false);
+
+    public ImportResult Import(string shareCode, bool autoConfirm, int confirmCallbackId, bool requireShareCodeDialog)
     {
         if (string.IsNullOrWhiteSpace(shareCode))
             return ImportResult.Fail("Kein Share-Code angegeben.");
 
-        if (!FindShareCodeTarget(out var addon, out var textInput, out var addonName))
+        var found = requireShareCodeDialog
+            ? FindShareCodeDialog(out var addon, out var textInput, out var addonName)
+            : FindShareCodeTarget(out addon, out textInput, out addonName);
+
+        if (!found)
         {
             return ImportResult.Fail(
                 "Kein Share-Code-Eingabefeld gefunden. Öffne im Spiel: Strategy Board → Neue Strategie → Share-Code, und versuche es erneut.");
@@ -43,6 +50,34 @@ public sealed unsafe class GameImporter
         return ImportResult.Ok(
             $"Code ({shareCode.Length} Zeichen) in '{addonName}' geschrieben" +
             (autoConfirm ? " und bestätigt." : ". Bitte im Spiel auf Übernehmen/OK klicken."));
+    }
+
+    public bool IsShareCodeWindowOpen(out string addonName)
+        => FindShareCodeDialog(out _, out _, out addonName);
+
+    public bool IsAnyStrategyBoardUiOpen()
+    {
+        var manager = RaptureAtkUnitManager.Instance();
+        if (manager == null)
+            return false;
+
+        var count = Math.Min((int)manager->AllLoadedUnitsList.Count, 256);
+        for (var i = 0; i < count; i++)
+        {
+            var addon = manager->AllLoadedUnitsList.Entries[i].Value;
+            if (addon == null || !addon->IsReady || !addon->IsVisible)
+                continue;
+
+            var name = addon->NameString;
+            if (name.Contains("Strategy", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("Whiteboard", StringComparison.OrdinalIgnoreCase) ||
+                name.Contains("WhiteBoard", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public void OpenStrategyBoard()
@@ -131,6 +166,99 @@ public sealed unsafe class GameImporter
         }
 
         return addon != null && textInput != null;
+    }
+
+    private static bool FindShareCodeDialog(
+        out AtkUnitBase* addon,
+        out AtkComponentTextInput* textInput,
+        out string addonName)
+    {
+        addon = null;
+        textInput = null;
+        addonName = string.Empty;
+
+        var manager = RaptureAtkUnitManager.Instance();
+        if (manager != null)
+        {
+            var focused = manager->FocusedAddon;
+            if (TryUseShareCodeAddon(focused, out addon, out textInput, out addonName))
+                return true;
+        }
+
+        foreach (var name in PreferredAddonNames)
+        {
+            if (!LooksLikeShareCodeDialog(name))
+                continue;
+
+            var candidate = GetAddonByName(name);
+            if (TryUseShareCodeAddon(candidate, out addon, out textInput, out addonName))
+                return true;
+        }
+
+        if (manager == null)
+            return false;
+
+        var count = Math.Min((int)manager->AllLoadedUnitsList.Count, 256);
+        for (var i = 0; i < count; i++)
+        {
+            var candidate = manager->AllLoadedUnitsList.Entries[i].Value;
+            if (TryUseShareCodeAddon(candidate, out addon, out textInput, out addonName))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool TryUseShareCodeAddon(
+        AtkUnitBase* candidate,
+        out AtkUnitBase* addon,
+        out AtkComponentTextInput* textInput,
+        out string addonName)
+    {
+        addon = null;
+        textInput = null;
+        addonName = string.Empty;
+
+        if (candidate == null || !candidate->IsReady || !candidate->IsVisible)
+            return false;
+
+        if (!LooksLikeShareCodeDialog(candidate->NameString))
+            return false;
+
+        var input = FindTextInput(candidate);
+        if (input == null)
+            return false;
+
+        addon = candidate;
+        textInput = input;
+        addonName = candidate->NameString;
+        return true;
+    }
+
+    private static bool LooksLikeShareCodeDialog(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return false;
+
+        if (name.Equals("StrategyBoard", StringComparison.OrdinalIgnoreCase) ||
+            name.Equals("StrategyBoardList", StringComparison.OrdinalIgnoreCase) ||
+            name.Equals("StrategyBoardMain", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Folder", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("List", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Name", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Rename", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Search", StringComparison.OrdinalIgnoreCase) ||
+            name.Contains("Filter", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return name.Contains("Share", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Code", StringComparison.OrdinalIgnoreCase) ||
+               name.Contains("Stgy", StringComparison.OrdinalIgnoreCase) ||
+               (name.Contains("Input", StringComparison.OrdinalIgnoreCase) &&
+                (name.Contains("Strategy", StringComparison.OrdinalIgnoreCase) ||
+                 name.Contains("White", StringComparison.OrdinalIgnoreCase)));
     }
 
     private static int ScoreAddon(AtkUnitBase* addon)

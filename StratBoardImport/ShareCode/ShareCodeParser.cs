@@ -40,10 +40,12 @@ public static partial class ShareCodeParser
             }
             catch (Exception ex)
             {
+                // The game is the source of truth. A well-formed [stgy:] string is still importable
+                // even if our decoder cannot read the name.
                 results.Add(new ParsedShareCode
                 {
                     Code = code,
-                    IsValid = false,
+                    IsValid = true,
                     Error = ex.Message,
                 });
             }

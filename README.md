@@ -91,6 +91,18 @@ StratBoardImport/bin/x64/Release/StratBoardImport.dll
 5. Confirm with OK / Apply in the game window.
 
 - One long folder code: **Import raw input**
-- Several `[stgy:]` codes: import each page separately and reopen the share-code dialog in between
+- Several `[stgy:]` codes: use **Import all boards into folder**
+
+### Folder import (several `[stgy:]` codes)
+
+The game has no public API to create folders or assign boards. The plugin assists the in-game flow instead:
+
+1. Paste all page codes and click **Check**.
+2. Set a folder name (default: first board name). Starting the job copies that name to the clipboard.
+3. In game, create or open that folder.
+4. Open **New Strategy → Share Code**. The plugin fills the next code and confirms it.
+5. Repeat step 4 for each remaining page.
+
+Game limits: **50** boards in the Saved List, **10** per folder, **20** temporary in the Shared List. Imports larger than 10 still run; split them across folders or leave extras in the Saved List. If boards land in the main list, drag them into a folder.
 
 If the plugin cannot find the input field, leave the share-code window open and enable the addon scan under **Settings**.

@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Download Dalamud
+        shell: pwsh
+        run: |
+          $dest = Join-Path $env:AppData "XIVLauncher\addon\Hooks\dev"
+          New-Item -ItemType Directory -Force -Path $dest | Out-Null
+          Invoke-WebRequest -Uri "https://goatcorp.github.io/dalamud-distrib/latest.zip" -OutFile dalamud.zip
+          Expand-Archive -Force -Path dalamud.zip -DestinationPath $dest
+
+      - name: Build
+        run: dotnet build StratBoardImport.sln -c Release
+
+      - name: Pack pluginmaster and zip
+        shell: pwsh
+        run: |
+          $zip = Get-ChildItem -Path "StratBoardImport\bin" -Recurse -Filter "latest.zip" | Select-Object -First 1
+          if (-not $zip) { throw "latest.zip nicht gefunden." }
+          Copy-Item $zip.FullName -Destination "latest.zip"
+
+          $manifestPath = Get-ChildItem -Path "StratBoardImport\bin" -Recurse -Filter "StratBoardImport.json" |
+            Where-Object { $_.DirectoryName -notmatch '\\StratBoardImport\\StratBoardImport$' } |
+            Select-Object -First 1
+          if (-not $manifestPath) {
+            $manifestPath = Get-ChildItem -Path "StratBoardImport\bin" -Recurse -Filter "StratBoardImport.json" | Select-Object -First 1
+          }
+
+          $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "v1.0.0.0" }
+          $download = "https://github.com/Dr0nhp/solid-palm-tree/releases/download/$tag/latest.zip"
+          $manifest = Get-Content $manifestPath.FullName -Raw | ConvertFrom-Json
+          $manifest | Add-Member -Name "RepoUrl" -Value "https://github.com/Dr0nhp/solid-palm-tree" -MemberType NoteProperty -Force
+          $manifest | Add-Member -Name "DownloadLinkInstall" -Value $download -MemberType NoteProperty -Force
+          $manifest | Add-Member -Name "DownloadLinkUpdate" -Value $download -MemberType NoteProperty -Force
+          $manifest | Add-Member -Name "DownloadLinkTesting" -Value $download -MemberType NoteProperty -Force
+          $manifest | Add-Member -Name "LastUpdate" -Value ([DateTimeOffset]::UtcNow.ToUnixTimeSeconds()) -MemberType NoteProperty -Force
+          $manifest | Add-Member -Name "IsHide" -Value $false -MemberType NoteProperty -Force
+          $manifest | Add-Member -Name "IsTestingExclusive" -Value $false -MemberType NoteProperty -Force
+          ConvertTo-Json -InputObject @($manifest) -Depth 8 | Set-Content -Encoding utf8 pluginmaster.json
+          Write-Host "Packed $($zip.FullName) as latest.zip for $tag"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            latest.zip
+            pluginmaster.json
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -1,0 +1,15 @@
+<Project Sdk="Dalamud.NET.Sdk/15.0.0">
+  <PropertyGroup>
+    <Version>1.0.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Author>solid-palm-tree</Author>
+    <Name>Strategy Board Import</Name>
+    <InternalName>StratBoardImport</InternalName>
+    <Punchline>Importiert auch sehr lange Strategy-Board-Share-Codes.</Punchline>
+    <Description>Fügt Strategy Boards aus Share-Codes ein, auch wenn der Code für das normale Importfeld zu lang ist. Ordner mit mehreren Seiten können als ein langer Code oder als mehrere [stgy:]-Codes eingefügt werden. Befehl: /sbi</Description>
+    <RepoUrl>https://github.com/Dr0nhp/solid-palm-tree</RepoUrl>
+    <Tags>strategy;board;import;stgy;raid</Tags>
+  </PropertyGroup>
+</Project>

@@ -1,55 +1,73 @@
-# Strategy Board Import
+# StratBoardImport
 
-Dalamud-Plugin für Final Fantasy XIV. Importiert **lange Strategy-Board-Share-Codes** (`[stgy:...]`), die das normale Importfeld abschneidet.
+Dalamud plugin for Final Fantasy XIV. Imports long Strategy Board share codes (`[stgy:...]`) that the vanilla import field truncates.
 
-Befehl im Spiel: `/sbi`
+In-game command: `/sbi`
 
-## Installation über GitHub
+## Repository name
 
-Den normalen Repository-Link (`https://github.com/Dr0nhp/solid-palm-tree`) kann Dalamud nicht laden. Stattdessen diese URL als **Custom Plugin Repository** eintragen:
+Use **`StratBoardImport`**.
+
+It matches the plugin’s internal name, is easy to search, and reads clearly as an FFXIV/Dalamud project. `solid-palm-tree` is only GitHub’s placeholder name.
+
+Rename on GitHub: **Settings → General → Repository name → `StratBoardImport`**. After that, the install URL becomes:
+
+```text
+https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/pluginmaster.json
+```
+
+Until you rename it, use the current URL below.
+
+## Install from GitHub
+
+Dalamud cannot install from `https://github.com/USER/REPO`. Add this **custom plugin repository** URL instead:
 
 ```text
 https://github.com/Dr0nhp/solid-palm-tree/releases/latest/download/pluginmaster.json
 ```
 
-1. Im Spiel `/xlsettings` öffnen
-2. Tab **Experimental**
-3. Unter **Custom Plugin Repositories** die URL einfügen und mit **+** bestätigen
-4. Speichern
-5. `/xlplugins` öffnen, nach **Strategy Board Import** suchen und installieren
+1. In game, open `/xlsettings`
+2. Go to **Experimental**
+3. Under **Custom Plugin Repositories**, paste the URL and confirm with **+**
+4. Save
+5. Open `/xlplugins`, search for **Strategy Board Import**, and install
 
-Die Datei `pluginmaster.json` und `latest.zip` entstehen automatisch, sobald ein GitHub-Release mit Tag `v*` existiert (zum Beispiel `v1.0.0.0`).
+The GitHub repository must be **public**. Dalamud cannot download a zip from a private repo.
 
-## Neues Release erzeugen
+`pluginmaster.json` and `latest.zip` are attached automatically when a `v*` tag is pushed (for example `v1.0.0.0`).
+
+## Create a new release
 
 ```powershell
 git tag v1.0.0.1
 git push origin v1.0.0.1
 ```
 
-GitHub Actions baut das Plugin und hängt `latest.zip` plus `pluginmaster.json` an das Release.
+GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.
 
-## Installation als Dev Plugin (lokal)
+## Local / dev install
+
+Requires .NET SDK 10 and Dalamud API 15.
 
 ```powershell
 dotnet build StratBoardImport.sln -c Release
 ```
 
-Danach `/xlsettings` → **Experimental** → **Dev Plugin Locations** und diese DLL eintragen:
+Then `/xlsettings` → **Experimental** → **Dev Plugin Locations**, and add:
 
 ```text
 StratBoardImport/bin/x64/Release/StratBoardImport.dll
 ```
 
-## Bedienung
+## Usage
 
-1. `/sbi` öffnet das Plugin-Fenster.
-2. Share-Code einfügen (oder **Aus Zwischenablage**).
-3. Im Spiel: **Strategy Board → Neue Strategie → Share-Code**.
-4. Im Plugin **Importieren** klicken.
-5. Im Spiel auf OK / Übernehmen.
+1. `/sbi` opens the plugin window.
+2. Paste a share code (or use **From clipboard**).
+3. In game: **Strategy Board → New Strategy → Share Code**.
+4. Click **Import** in the plugin.
+5. Confirm with OK / Apply in the game window.
 
-- Ein langer Ordner-Code: **Roheingabe importieren**
-- Mehrere `[stgy:]`-Codes: Seiten einzeln importieren, Dialog dazwischen neu öffnen
+- One long folder code: **Import raw input**
+- Several `[stgy:]` codes: import each page separately and reopen the share-code dialog in between
 
-Falls das Eingabefeld nicht gefunden wird: Share-Code-Fenster offen lassen und unter **Einstellungen** den Addon-Scan aktivieren.
+If the plugin cannot find the input field, leave the share-code window open and enable the addon scan under **Settings**.

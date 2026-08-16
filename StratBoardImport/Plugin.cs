@@ -101,6 +101,13 @@ public sealed class Plugin : IDalamudPlugin
                 return;
             }
 
+            var native = TofuImporter.ImportOne(first.Code);
+            if (native.Success)
+            {
+                ChatPrint(native.Message);
+                return;
+            }
+
             var result = Importer.Import(first.Code, Configuration.AutoConfirm, Configuration.ConfirmCallbackId);
             if (result.Success)
                 ChatPrint(result.Message);

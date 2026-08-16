@@ -83,16 +83,28 @@ public sealed class FolderImportJob
         totalCount = valid.Count;
         FolderName = string.IsNullOrWhiteSpace(folderName) ? "Import" : folderName.Trim();
         lastWindowName = string.Empty;
-        waitUntilUtc = DateTime.UtcNow.AddMilliseconds(250);
         lastWaitHintUtc = DateTime.MinValue;
-        phase = Phase.WaitingForShareCodeWindow;
         HasError = false;
+
+        var native = TofuImporter.ImportMany(valid, FolderName);
+        if (native.Success)
+        {
+            phase = Phase.Done;
+            Status = native.Message;
+            Plugin.ChatPrint(Status);
+            queue.Clear();
+            return true;
+        }
+
+        Plugin.Log.Warning($"[SBI] Direct Tofu import did not run ({native.Message}). Falling back to the share-code window.");
+
+        waitUntilUtc = DateTime.UtcNow.AddMilliseconds(250);
+        phase = Phase.WaitingForShareCodeWindow;
 
         if (!Plugin.Instance.Importer.IsAnyStrategyBoardUiOpen())
             Plugin.Instance.Importer.OpenStrategyBoard();
 
         ImGui.SetClipboardText(FolderName);
-
         Status = Loc.Format(L.FolderStart, FolderName, index + 1, totalCount);
         Plugin.ChatPrint(Status);
         return true;

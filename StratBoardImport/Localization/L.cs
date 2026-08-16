@@ -60,6 +60,12 @@ public static class L
     public const string ImportNoField = "import.no_field";
     public const string ImportWroteConfirmed = "import.wrote_confirmed";
     public const string ImportWroteManual = "import.wrote_manual";
+    public const string ImportNativeOk = "import.native_ok";
+    public const string ImportNativeFolderOk = "import.native_folder_ok";
+    public const string ImportNativeFull = "import.native_full";
+    public const string ImportNativeUnavailable = "import.native_unavailable";
+    public const string ImportNativeFailed = "import.native_failed";
+    public const string ImportNativeFolderFailed = "import.native_folder_failed";
 
     public const string FolderNone = "folder.none";
     public const string FolderSavedListCap = "folder.saved_list_cap";

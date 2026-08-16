@@ -47,11 +47,25 @@ public sealed unsafe class GameImporter
         SetInputText(textInput, shareCode);
 
         if (autoConfirm)
-            addon->FireCallbackInt(confirmCallbackId);
+            ConfirmShareCodeDialog(addon, shareCode, confirmCallbackId);
 
         return ImportResult.Ok(autoConfirm
             ? Loc.Format(L.ImportWroteConfirmed, shareCode.Length, addonName)
             : Loc.Format(L.ImportWroteManual, shareCode.Length, addonName));
+    }
+
+    private static void ConfirmShareCodeDialog(AtkUnitBase* addon, string shareCode, int confirmCallbackId)
+    {
+        var values = stackalloc AtkValue[2];
+        values[0] = default;
+        values[1] = default;
+        values[0].Type = AtkValueType.Int;
+        values[0].Int = confirmCallbackId;
+        values[1].SetManagedString(shareCode);
+        addon->FireCallback(2, values, true);
+
+        if (addon->IsVisible)
+            addon->FireCallbackInt(confirmCallbackId);
     }
 
     public bool IsShareCodeWindowOpen(out string addonName)

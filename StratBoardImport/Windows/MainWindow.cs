@@ -337,6 +337,14 @@ public sealed class MainWindow : Window, IDisposable
         if (compact.Contains("stgy:", StringComparison.OrdinalIgnoreCase))
             code = compact;
 
+        var native = TofuImporter.ImportOne(code);
+        if (native.Success)
+        {
+            SetStatus(native.Message, false);
+            Plugin.ChatPrint(native.Message);
+            return;
+        }
+
         var result = plugin.Importer.Import(
             code,
             plugin.Configuration.AutoConfirm,

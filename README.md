@@ -66,8 +66,8 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 ## Create a new release
 
 ```powershell
-git tag v1.1.2.0
-git push origin v1.1.2.0
+git tag v1.2.0.0
+git push origin v1.2.0.0
 ```
 
 GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.
@@ -90,26 +90,20 @@ StratBoardImport/bin/x64/Release/StratBoardImport.dll
 
 1. `/sbi` opens the plugin window.
 2. Paste a share code (or use **From clipboard**).
-3. In game: **Strategy Board → New Strategy → Share Code**.
-4. Click **Import** in the plugin.
-5. Confirm with OK / Apply in the game window.
+3. Click **Import**. Boards are written into the Saved List (Tofu). Re-open Strategy Board if the list does not refresh.
+4. Several `[stgy:]` pages: set a folder name and **Import all boards into a folder**.
 
-- One long folder code: **Import raw input**
-- Several `[stgy:]` codes: use **Import all boards into folder**
+- **Import raw input** still fills the in-game share-code field (for the vanilla dialog).
 
 ### Folder import (several `[stgy:]` codes)
 
-The game has no public API to create folders or assign boards. The plugin assists the in-game flow instead:
-
 1. Paste all page codes and click **Check**.
-2. Set a folder name (default: first board name). Starting the job copies that name to the clipboard.
-3. In game, create or open that folder.
-4. Open **New Strategy → Share Code**. The plugin fills the next code and confirms it.
-5. Repeat step 4 for each remaining page.
+2. Set a folder name (default: first board name).
+3. Click **Import all boards into a folder**. The plugin creates the folder if needed and writes every page into the Saved List.
 
-Game limits: **50** boards in the Saved List in total. Folders only group those boards; they do not have a separate cap. Shared List: **20** temporary boards. If boards land in the main list, drag them into a folder.
+Game limits: **50** boards in the Saved List in total. Folders only group those boards; they do not have a separate cap. Shared List: **20** temporary boards.
 
-If the plugin cannot find the input field, leave the share-code window open and enable the addon scan under **Settings**. Language can be set there (`auto` follows the game client).
+If direct import is unavailable, the older share-code window flow is used. Leave that window open and enable the addon scan under **Settings**. Language can be set there (`auto` follows the game client).
 
 ## Translations
 

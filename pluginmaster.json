@@ -5,7 +5,7 @@
     "Punchline": "Import long Strategy Board share codes that the vanilla field truncates.",
     "Description": "Writes Strategy Board share codes into the in-game import field, even when they are too long for the normal UI. Paste one code or several [stgy:] pages. Command: /sbi",
     "InternalName": "StratBoardImport",
-    "AssemblyVersion": "1.1.2.0",
+    "AssemblyVersion": "1.2.0.0",
     "RepoUrl": "https://github.com/Dr0nhp/StratBoardImport",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 15,

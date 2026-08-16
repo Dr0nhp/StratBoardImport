@@ -6,6 +6,11 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.2.0.0
+
+- Feature - Import writes boards into the Saved List directly (no share-code window per page)
+- Bugfix - Auto-confirm now sends the share code with the OK callback
+
 ## 1.1.2.0
 
 - Change - Settings now include a short explanation under each option

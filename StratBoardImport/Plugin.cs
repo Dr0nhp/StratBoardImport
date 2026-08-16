@@ -26,7 +26,6 @@ public sealed class Plugin : IDalamudPlugin
     public Configuration Configuration { get; }
     public GameImporter Importer { get; } = new();
     public FolderImportJob FolderJob { get; } = new();
-    public List<string> LastAddonScan { get; set; } = [];
     internal static Plugin Instance { get; private set; } = null!;
 
     private readonly WindowSystem windowSystem = new("StratBoardImport");
@@ -108,7 +107,7 @@ public sealed class Plugin : IDalamudPlugin
                 return;
             }
 
-            var result = Importer.Import(first.Code, Configuration.AutoConfirm, Configuration.ConfirmCallbackId);
+            var result = Importer.Import(first.Code);
             if (result.Success)
                 ChatPrint(result.Message);
             else
@@ -122,6 +121,7 @@ public sealed class Plugin : IDalamudPlugin
     private void OnFrameworkUpdate(IFramework framework)
     {
         FolderJob.Tick();
+        TofuImporter.TickUiRefresh();
     }
 
     public void ToggleMainUi() => mainWindow.Toggle();

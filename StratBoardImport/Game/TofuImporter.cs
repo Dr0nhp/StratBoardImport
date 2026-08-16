@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using FFXIVClientStructs.FFXIV.Client.Graphics;
+using FFXIVClientStructs.FFXIV.Client.UI;
 using FFXIVClientStructs.FFXIV.Client.UI.Agent;
 using FFXIVClientStructs.FFXIV.Client.UI.Misc;
 using StratBoardImport.Localization;
@@ -12,6 +13,9 @@ namespace StratBoardImport;
 /// </summary>
 public static unsafe class TofuImporter
 {
+    private static bool reopenListWhenClosed;
+    private static int reopenWaitTicks;
+
     public static bool IsAvailable
     {
         get
@@ -339,16 +343,91 @@ public static unsafe class TofuImporter
         return ImportResult.Ok(Loc.Format(L.DeleteAllOk, boards, folders));
     }
 
-    private static void RefreshListUi()
+    public static void TickUiRefresh()
     {
-        var agent = AgentTofuList.Instance();
-        if (agent == null)
+        if (!reopenListWhenClosed)
             return;
 
-        if (agent->IsAddonShown())
+        var agent = AgentTofuList.Instance();
+        if (agent == null)
         {
-            agent->HideAddon();
-            agent->ShowAddon();
+            reopenListWhenClosed = false;
+            return;
         }
+
+        reopenWaitTicks--;
+        var closed = !agent->IsAddonShown() && !agent->IsAgentActive();
+        if (!closed && reopenWaitTicks > 0)
+            return;
+
+        reopenListWhenClosed = false;
+        try
+        {
+            agent->Show();
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Warning(ex, "[SBI] Could not re-open Strategy Board after a list change.");
+        }
+    }
+
+    private static void RefreshListUi()
+    {
+        var listWasOpen = IsTofuUiOpen(AgentId.TofuList) || IsTofuUiOpen(AgentId.TofuPreview);
+        HideTofuUi(AgentId.TofuPreview);
+        HideTofuUi(AgentId.TofuEdit);
+        HideTofuUi(AgentId.TofuImport);
+
+        var list = AgentTofuList.Instance();
+        if (list != null && (list->IsAddonShown() || list->IsAgentActive()))
+        {
+            try
+            {
+                list->Hide();
+            }
+            catch (Exception ex)
+            {
+                Plugin.Log.Warning(ex, "[SBI] Could not close Strategy Board before refresh.");
+                return;
+            }
+        }
+
+        if (!listWasOpen)
+            return;
+
+        reopenListWhenClosed = true;
+        reopenWaitTicks = 8;
+    }
+
+    private static bool IsTofuUiOpen(AgentId id)
+    {
+        var agent = GetAgent(id);
+        return agent != null && (agent->IsAddonShown() || agent->IsAgentActive());
+    }
+
+    private static void HideTofuUi(AgentId id)
+    {
+        var agent = GetAgent(id);
+        if (agent == null || (!agent->IsAddonShown() && !agent->IsAgentActive()))
+            return;
+
+        try
+        {
+            agent->Hide();
+        }
+        catch (Exception ex)
+        {
+            Plugin.Log.Warning(ex, $"[SBI] Could not close {id}.");
+        }
+    }
+
+    private static AgentInterface* GetAgent(AgentId id)
+    {
+        var ui = UIModule.Instance();
+        if (ui == null)
+            return null;
+
+        var module = ui->GetAgentModule();
+        return module == null ? null : module->GetAgentByInternalId(id);
     }
 }

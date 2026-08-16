@@ -34,16 +34,8 @@ public static class L
     public const string UiDeleteAllSavedCancel = "ui.delete_all_saved_cancel";
     public const string UiDeleteAllSavedHelp = "ui.delete_all_saved_help";
     public const string UiSettings = "ui.settings";
-    public const string UiAutoConfirm = "ui.auto_confirm";
-    public const string UiAutoConfirmHelp = "ui.auto_confirm_help";
     public const string UiShowChatMessages = "ui.show_chat_messages";
     public const string UiShowChatMessagesHelp = "ui.show_chat_messages_help";
-    public const string UiCallbackId = "ui.callback_id";
-    public const string UiCallbackIdHelp = "ui.callback_id_help";
-    public const string UiShowAddonScan = "ui.show_addon_scan";
-    public const string UiShowAddonScanHelp = "ui.show_addon_scan_help";
-    public const string UiRefreshScan = "ui.refresh_scan";
-    public const string UiNoAddons = "ui.no_addons";
     public const string UiLanguage = "ui.language";
     public const string UiLanguageAuto = "ui.language_auto";
     public const string UiLanguageHelp = "ui.language_help";

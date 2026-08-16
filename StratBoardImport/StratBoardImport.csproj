@@ -1,14 +1,14 @@
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
-    <Version>1.3.0.0</Version>
+    <Version>1.3.1.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Author>Dr0nhp</Author>
     <Name>Strategy Board Import</Name>
     <InternalName>StratBoardImport</InternalName>
-    <Punchline>Import long Strategy Board share codes that the vanilla field truncates.</Punchline>
-    <Description>Writes Strategy Board share codes into the in-game import field, even when they are too long for the normal UI. Paste one code or several [stgy:] pages. Command: /sbi</Description>
+    <Punchline>Import long Strategy Board codes and wipe the Saved List in two clicks.</Punchline>
+    <Description>Writes Strategy Board share codes into the Saved List, even when they are too long for the vanilla field. Paste one code or several [stgy:] pages into folders. Also clears every saved board at once (the game has no bulk delete). Command: /sbi</Description>
     <RepoUrl>https://github.com/Dr0nhp/StratBoardImport</RepoUrl>
     <Tags>strategy;board;import;stgy;raid</Tags>
   </PropertyGroup>

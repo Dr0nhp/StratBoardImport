@@ -29,10 +29,7 @@ public sealed unsafe class GameImporter
         "WhiteBoard",
     ];
 
-    public ImportResult Import(string shareCode, bool autoConfirm, int confirmCallbackId)
-        => Import(shareCode, autoConfirm, confirmCallbackId, requireShareCodeDialog: false);
-
-    public ImportResult Import(string shareCode, bool autoConfirm, int confirmCallbackId, bool requireShareCodeDialog)
+    public ImportResult Import(string shareCode, bool requireShareCodeDialog = false)
     {
         if (string.IsNullOrWhiteSpace(shareCode))
             return ImportResult.Fail(Loc.Get(L.ImportNoCode));
@@ -45,27 +42,23 @@ public sealed unsafe class GameImporter
             return ImportResult.Fail(Loc.Get(L.ImportNoField));
 
         SetInputText(textInput, shareCode);
+        ConfirmShareCodeDialog(addon, shareCode);
 
-        if (autoConfirm)
-            ConfirmShareCodeDialog(addon, shareCode, confirmCallbackId);
-
-        return ImportResult.Ok(autoConfirm
-            ? Loc.Format(L.ImportWroteConfirmed, shareCode.Length, addonName)
-            : Loc.Format(L.ImportWroteManual, shareCode.Length, addonName));
+        return ImportResult.Ok(Loc.Format(L.ImportWroteConfirmed, shareCode.Length, addonName));
     }
 
-    private static void ConfirmShareCodeDialog(AtkUnitBase* addon, string shareCode, int confirmCallbackId)
+    private static void ConfirmShareCodeDialog(AtkUnitBase* addon, string shareCode)
     {
         var values = stackalloc AtkValue[2];
         values[0] = default;
         values[1] = default;
         values[0].Type = AtkValueType.Int;
-        values[0].Int = confirmCallbackId;
+        values[0].Int = 0;
         values[1].SetManagedString(shareCode);
         addon->FireCallback(2, values, true);
 
         if (addon->IsVisible)
-            addon->FireCallbackInt(confirmCallbackId);
+            addon->FireCallbackInt(0);
     }
 
     public bool IsShareCodeWindowOpen(out string addonName)
@@ -109,26 +102,6 @@ public sealed unsafe class GameImporter
         command->SetString("/strategyboard"u8);
         uiModule->ProcessChatBoxEntry(command);
         command->Dtor();
-    }
-
-    public List<string> ListCandidateAddons()
-    {
-        var names = new List<string>();
-        var manager = RaptureAtkUnitManager.Instance();
-        if (manager == null)
-            return names;
-
-        var count = Math.Min((int)manager->AllLoadedUnitsList.Count, 256);
-        for (var i = 0; i < count; i++)
-        {
-            var addon = manager->AllLoadedUnitsList.Entries[i].Value;
-            if (addon == null || FindTextInput(addon) == null)
-                continue;
-
-            names.Add($"{addon->NameString} (id {addon->Id}, visible={addon->IsVisible})");
-        }
-
-        return names;
     }
 
     public List<string> ListVisibleTextInputNames()

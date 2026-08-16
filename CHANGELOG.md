@@ -6,6 +6,12 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.3.1.0
+
+- Bugfix - Strategy Board reloads itself after import or delete if the window is already open
+- Change - Settings keep language and chat messages (auto-confirm, callback ID, and addon scan removed)
+- Docs - README covers Saved List wipe
+
 ## 1.3.0.0
 
 - Bugfix - Folder import no longer duplicates boards in the Saved List root after a folder fills up

@@ -8,11 +8,13 @@ See **[CHANGELOG.md](CHANGELOG.md)** for what changed in each version.
 
 ## Why this plugin exists
 
-FFXIV Strategy Boards can be shared as text codes. A single page is usually fine. A **folder with several pages** produces a much longer import string.
+FFXIV Strategy Boards can be shared as `[stgy:...]` text codes. A single page is usually fine. A **folder with several pages** produces a much longer string.
 
 The game’s share-code field has a length limit. Paste a long folder code and the client **cuts it off**. The import then fails, or only the first page comes through.
 
-This plugin takes the full import string and writes it into the in-game field, so the code is not truncated. You get the complete board or folder instead of a broken partial import.
+This plugin writes boards **straight into the Saved List**, so that length limit does not apply. Several pages go into a named folder (10 boards per folder; extras into `Name (2)`, `Name (3)`, …).
+
+The game also has **no bulk delete**. After a bad import, or when you want a clean slate, the plugin can wipe every saved board and folder in two clicks. The Shared List is left alone.
 
 ## Share code resources
 
@@ -66,8 +68,8 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 ## Create a new release
 
 ```powershell
-git tag v1.3.0.0
-git push origin v1.3.0.0
+git tag v1.3.1.0
+git push origin v1.3.1.0
 ```
 
 GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.
@@ -90,7 +92,7 @@ StratBoardImport/bin/x64/Release/StratBoardImport.dll
 
 1. `/sbi` opens the plugin window.
 2. Paste a share code (or use **From clipboard**).
-3. Click **Import**. Boards are written into the Saved List (Tofu). Re-open Strategy Board if the list does not refresh.
+3. Click **Import**. Boards are written into the Saved List (Tofu). If Strategy Board is already open, it reloads on its own.
 4. Several `[stgy:]` pages: set a folder name and **Import all boards into a folder**.
 
 - **Import raw input** still fills the in-game share-code field (for the vanilla dialog).
@@ -105,7 +107,7 @@ Game limits: **50** boards in the Saved List in total. A folder holds **10** boa
 
 **Delete all saved boards** (click twice) clears the Saved List, including folders. The Shared List is not touched.
 
-If direct import is unavailable, the older share-code window flow is used. Leave that window open and enable the addon scan under **Settings**. Language can be set there (`auto` follows the game client).
+If direct import is unavailable, the older share-code window flow is used. Language and chat messages can be set under **Settings** (`auto` follows the game client).
 
 ## Translations
 

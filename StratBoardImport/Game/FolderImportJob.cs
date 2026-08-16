@@ -150,11 +150,7 @@ public sealed class FolderImportJob
             return;
 
         var code = queue[index];
-        var result = Plugin.Instance.Importer.Import(
-            code.Code,
-            autoConfirm: true,
-            Plugin.Instance.Configuration.ConfirmCallbackId,
-            requireShareCodeDialog: true);
+        var result = Plugin.Instance.Importer.Import(code.Code, requireShareCodeDialog: true);
         if (!result.Success)
         {
             Fail(result.Message);

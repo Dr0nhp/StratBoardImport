@@ -7,10 +7,13 @@ public sealed class Configuration : IPluginConfiguration
     public int Version { get; set; } = 1;
 
     /// <summary>
-    /// After filling the share-code field, fire the addon's confirm callback.
+    /// Unused. Kept so older configs still load.
     /// </summary>
-    public bool AutoConfirm { get; set; }
+    public bool AutoConfirm { get; set; } = true;
 
+    /// <summary>
+    /// Unused. Kept so older configs still load.
+    /// </summary>
     public int ConfirmCallbackId { get; set; }
 
     /// <summary>

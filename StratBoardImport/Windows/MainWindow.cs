@@ -18,7 +18,6 @@ public sealed class MainWindow : Window, IDisposable
     private string status;
     private bool statusError;
     private int selectedIndex;
-    private bool showAddonScan;
     private string folderName = string.Empty;
     private string lastJobStatus = string.Empty;
     private bool confirmDeleteSaved;
@@ -283,14 +282,6 @@ public sealed class MainWindow : Window, IDisposable
         DrawLanguageCombo();
         DrawHelp(L.UiLanguageHelp);
 
-        var autoConfirm = plugin.Configuration.AutoConfirm;
-        if (ImGui.Checkbox(Loc.Get(L.UiAutoConfirm), ref autoConfirm))
-        {
-            plugin.Configuration.AutoConfirm = autoConfirm;
-            plugin.Configuration.Save();
-        }
-        DrawHelp(L.UiAutoConfirmHelp);
-
         var showChat = plugin.Configuration.ShowChatMessages;
         if (ImGui.Checkbox(Loc.Get(L.UiShowChatMessages), ref showChat))
         {
@@ -298,28 +289,6 @@ public sealed class MainWindow : Window, IDisposable
             plugin.Configuration.Save();
         }
         DrawHelp(L.UiShowChatMessagesHelp);
-
-        var callbackId = plugin.Configuration.ConfirmCallbackId;
-        if (ImGui.InputInt(Loc.Get(L.UiCallbackId), ref callbackId))
-        {
-            plugin.Configuration.ConfirmCallbackId = Math.Max(0, callbackId);
-            plugin.Configuration.Save();
-        }
-        DrawHelp(L.UiCallbackIdHelp);
-
-        if (ImGui.Checkbox(Loc.Get(L.UiShowAddonScan), ref showAddonScan) && showAddonScan)
-            RefreshAddonScan();
-        DrawHelp(L.UiShowAddonScanHelp);
-
-        if (!showAddonScan)
-            return;
-
-        if (ImGui.Button(Loc.Get(L.UiRefreshScan)))
-            RefreshAddonScan();
-
-        ImGui.TextWrapped(plugin.LastAddonScan.Count == 0
-            ? Loc.Get(L.UiNoAddons)
-            : string.Join('\n', plugin.LastAddonScan));
     }
 
     private void DrawLanguageCombo()
@@ -394,10 +363,7 @@ public sealed class MainWindow : Window, IDisposable
             return;
         }
 
-        var result = plugin.Importer.Import(
-            code,
-            plugin.Configuration.AutoConfirm,
-            plugin.Configuration.ConfirmCallbackId);
+        var result = plugin.Importer.Import(code);
         SetStatus(result.Message, !result.Success);
         if (result.Success)
             Plugin.ChatPrint(result.Message);
@@ -410,11 +376,6 @@ public sealed class MainWindow : Window, IDisposable
         var codes = parsed.Where(c => c.IsValid).Select(c => c.Code);
         ImGui.SetClipboardText(string.Join("\n\n", codes));
         SetStatus(Loc.Format(L.StatusCopiedAll, parsed.Count(c => c.IsValid)), false);
-    }
-
-    private void RefreshAddonScan()
-    {
-        plugin.LastAddonScan = plugin.Importer.ListCandidateAddons();
     }
 
     private void SyncFolderJobStatus()

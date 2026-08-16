@@ -24,6 +24,7 @@
   "ui.need_two_codes": "Need at least two [stgy:] codes.",
   "ui.settings": "Settings",
   "ui.auto_confirm": "Auto-confirm after filling the field",
+  "ui.show_chat_messages": "Show plugin messages in chat",
   "ui.callback_id": "Callback ID (OK button)",
   "ui.show_addon_scan": "Show addon scan (debug)",
   "ui.refresh_scan": "Refresh scan",

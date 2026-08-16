@@ -24,6 +24,7 @@
   "ui.need_two_codes": "[stgy:] コードが 2 件以上必要です。",
   "ui.settings": "設定",
   "ui.auto_confirm": "入力後に自動で確定する",
+  "ui.show_chat_messages": "プラグインメッセージをチャットに表示する",
   "ui.callback_id": "コールバック ID（OK ボタン）",
   "ui.show_addon_scan": "アドオンスキャンを表示（デバッグ）",
   "ui.refresh_scan": "スキャンを更新",

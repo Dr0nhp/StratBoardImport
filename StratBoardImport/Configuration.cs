@@ -18,6 +18,11 @@ public sealed class Configuration : IPluginConfiguration
     /// </summary>
     public string Language { get; set; } = Localization.Loc.Auto;
 
+    /// <summary>
+    /// Print [SBI] status lines in the game chat. The plugin window still shows them.
+    /// </summary>
+    public bool ShowChatMessages { get; set; } = true;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

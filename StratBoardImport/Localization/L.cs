@@ -31,6 +31,7 @@ public static class L
     public const string UiNeedTwoCodes = "ui.need_two_codes";
     public const string UiSettings = "ui.settings";
     public const string UiAutoConfirm = "ui.auto_confirm";
+    public const string UiShowChatMessages = "ui.show_chat_messages";
     public const string UiCallbackId = "ui.callback_id";
     public const string UiShowAddonScan = "ui.show_addon_scan";
     public const string UiRefreshScan = "ui.refresh_scan";

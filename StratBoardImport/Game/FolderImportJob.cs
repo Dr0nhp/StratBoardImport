@@ -73,7 +73,7 @@ public sealed class FolderImportJob
 
         if (valid.Count > MaxSavedBoards)
         {
-            Plugin.ChatGui.PrintError($"[SBI] {Loc.Format(L.FolderSavedListCap, MaxSavedBoards)}");
+            Plugin.ChatPrintError(Loc.Format(L.FolderSavedListCap, MaxSavedBoards));
             valid = valid.Take(MaxSavedBoards).ToList();
         }
 
@@ -94,7 +94,7 @@ public sealed class FolderImportJob
         ImGui.SetClipboardText(FolderName);
 
         Status = Loc.Format(L.FolderStart, FolderName, index + 1, totalCount);
-        Plugin.ChatGui.Print($"[SBI] {Status}");
+        Plugin.ChatPrint(Status);
         return true;
     }
 
@@ -151,7 +151,7 @@ public sealed class FolderImportJob
         lastWindowName = addonName;
         var title = string.IsNullOrEmpty(code.Name) ? Loc.Format(L.FolderPage, index + 1) : code.Name;
         Status = Loc.Format(L.FolderImported, index + 1, totalCount, title);
-        Plugin.ChatGui.Print($"[SBI] {Status}");
+        Plugin.ChatPrint(Status);
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(400);
         phase = Phase.WaitingForWindowClose;
     }
@@ -167,7 +167,7 @@ public sealed class FolderImportJob
         {
             phase = Phase.Done;
             Status = Loc.Format(L.FolderDone, totalCount, FolderName);
-            Plugin.ChatGui.Print($"[SBI] {Status}");
+            Plugin.ChatPrint(Status);
             queue.Clear();
             return;
         }
@@ -195,7 +195,7 @@ public sealed class FolderImportJob
         phase = Phase.Failed;
         HasError = true;
         Status = message;
-        Plugin.ChatGui.PrintError($"[SBI] {message}");
+        Plugin.ChatPrintError(message);
         queue.Clear();
     }
 }

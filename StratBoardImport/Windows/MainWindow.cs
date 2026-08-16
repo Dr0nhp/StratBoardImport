@@ -240,6 +240,13 @@ public sealed class MainWindow : Window, IDisposable
             plugin.Configuration.Save();
         }
 
+        var showChat = plugin.Configuration.ShowChatMessages;
+        if (ImGui.Checkbox(Loc.Get(L.UiShowChatMessages), ref showChat))
+        {
+            plugin.Configuration.ShowChatMessages = showChat;
+            plugin.Configuration.Save();
+        }
+
         var callbackId = plugin.Configuration.ConfirmCallbackId;
         if (ImGui.InputInt(Loc.Get(L.UiCallbackId), ref callbackId))
         {
@@ -323,9 +330,9 @@ public sealed class MainWindow : Window, IDisposable
             plugin.Configuration.ConfirmCallbackId);
         SetStatus(result.Message, !result.Success);
         if (result.Success)
-            Plugin.ChatGui.Print($"[SBI] {result.Message}");
+            Plugin.ChatPrint(result.Message);
         else
-            Plugin.ChatGui.PrintError($"[SBI] {result.Message}");
+            Plugin.ChatPrintError(result.Message);
     }
 
     private void CopyAllValid()

@@ -6,6 +6,10 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.1.1.0
+
+- Feature - Option to hide plugin messages in chat
+
 ## 1.1.0.0
 
 - Feature - In-game text is now in translation files (`de-DE`, `en-UK`, `fr-FR`, `ja-JP`)

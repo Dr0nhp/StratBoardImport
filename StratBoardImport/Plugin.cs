@@ -56,6 +56,20 @@ public sealed class Plugin : IDalamudPlugin
         Log.Information(Loc.Get(L.LogLoaded));
     }
 
+    internal static void ChatPrint(string message)
+    {
+        if (!Instance.Configuration.ShowChatMessages)
+            return;
+        ChatGui.Print($"[SBI] {message}");
+    }
+
+    internal static void ChatPrintError(string message)
+    {
+        if (!Instance.Configuration.ShowChatMessages)
+            return;
+        ChatGui.PrintError($"[SBI] {message}");
+    }
+
     public void ReloadLanguage()
     {
         Loc.Reload();
@@ -82,16 +96,16 @@ public sealed class Plugin : IDalamudPlugin
             var first = parsed.FirstOrDefault(c => c.IsValid);
             if (first == null)
             {
-                ChatGui.PrintError($"[SBI] {Loc.Get(L.CommandNoCode)}");
+                ChatPrintError(Loc.Get(L.CommandNoCode));
                 ToggleMainUi();
                 return;
             }
 
             var result = Importer.Import(first.Code, Configuration.AutoConfirm, Configuration.ConfirmCallbackId);
             if (result.Success)
-                ChatGui.Print($"[SBI] {result.Message}");
+                ChatPrint(result.Message);
             else
-                ChatGui.PrintError($"[SBI] {result.Message}");
+                ChatPrintError(result.Message);
             return;
         }
 

@@ -6,6 +6,10 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.1.2.0
+
+- Change - Settings now include a short explanation under each option
+
 ## 1.1.1.0
 
 - Feature - Option to hide plugin messages in chat

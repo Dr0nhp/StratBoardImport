@@ -232,6 +232,7 @@ public sealed class MainWindow : Window, IDisposable
             return;
 
         DrawLanguageCombo();
+        DrawHelp(L.UiLanguageHelp);
 
         var autoConfirm = plugin.Configuration.AutoConfirm;
         if (ImGui.Checkbox(Loc.Get(L.UiAutoConfirm), ref autoConfirm))
@@ -239,6 +240,7 @@ public sealed class MainWindow : Window, IDisposable
             plugin.Configuration.AutoConfirm = autoConfirm;
             plugin.Configuration.Save();
         }
+        DrawHelp(L.UiAutoConfirmHelp);
 
         var showChat = plugin.Configuration.ShowChatMessages;
         if (ImGui.Checkbox(Loc.Get(L.UiShowChatMessages), ref showChat))
@@ -246,6 +248,7 @@ public sealed class MainWindow : Window, IDisposable
             plugin.Configuration.ShowChatMessages = showChat;
             plugin.Configuration.Save();
         }
+        DrawHelp(L.UiShowChatMessagesHelp);
 
         var callbackId = plugin.Configuration.ConfirmCallbackId;
         if (ImGui.InputInt(Loc.Get(L.UiCallbackId), ref callbackId))
@@ -253,9 +256,11 @@ public sealed class MainWindow : Window, IDisposable
             plugin.Configuration.ConfirmCallbackId = Math.Max(0, callbackId);
             plugin.Configuration.Save();
         }
+        DrawHelp(L.UiCallbackIdHelp);
 
         if (ImGui.Checkbox(Loc.Get(L.UiShowAddonScan), ref showAddonScan) && showAddonScan)
             RefreshAddonScan();
+        DrawHelp(L.UiShowAddonScanHelp);
 
         if (!showAddonScan)
             return;
@@ -288,6 +293,14 @@ public sealed class MainWindow : Window, IDisposable
         }
 
         ImGui.EndCombo();
+    }
+
+    private static void DrawHelp(string key)
+    {
+        ImGui.PushTextWrapPos();
+        ImGui.TextDisabled(Loc.Get(key));
+        ImGui.PopTextWrapPos();
+        ImGuiHelpers.ScaledDummy(4);
     }
 
     private void SetLanguage(string culture)

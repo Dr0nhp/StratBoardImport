@@ -4,12 +4,12 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <Author>solid-palm-tree</Author>
+    <Author>Dr0nhp</Author>
     <Name>Strategy Board Import</Name>
     <InternalName>StratBoardImport</InternalName>
     <Punchline>Importiert auch sehr lange Strategy-Board-Share-Codes.</Punchline>
     <Description>Fügt Strategy Boards aus Share-Codes ein, auch wenn der Code für das normale Importfeld zu lang ist. Ordner mit mehreren Seiten können als ein langer Code oder als mehrere [stgy:]-Codes eingefügt werden. Befehl: /sbi</Description>
-    <RepoUrl>https://github.com/Dr0nhp/solid-palm-tree</RepoUrl>
+    <RepoUrl>https://github.com/Dr0nhp/StratBoardImport</RepoUrl>
     <Tags>strategy;board;import;stgy;raid</Tags>
   </PropertyGroup>
 </Project>

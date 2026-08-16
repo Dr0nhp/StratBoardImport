@@ -48,9 +48,9 @@ jobs:
           }
 
           $tag = if ($env:GITHUB_REF_NAME) { $env:GITHUB_REF_NAME } else { "v1.0.0.0" }
-          $download = "https://github.com/Dr0nhp/solid-palm-tree/releases/download/$tag/latest.zip"
+          $download = "https://github.com/Dr0nhp/StratBoardImport/releases/download/$tag/latest.zip"
           $manifest = Get-Content $manifestPath.FullName -Raw | ConvertFrom-Json
-          $manifest | Add-Member -Name "RepoUrl" -Value "https://github.com/Dr0nhp/solid-palm-tree" -MemberType NoteProperty -Force
+          $manifest | Add-Member -Name "RepoUrl" -Value "https://github.com/Dr0nhp/StratBoardImport" -MemberType NoteProperty -Force
           $manifest | Add-Member -Name "DownloadLinkInstall" -Value $download -MemberType NoteProperty -Force
           $manifest | Add-Member -Name "DownloadLinkUpdate" -Value $download -MemberType NoteProperty -Force
           $manifest | Add-Member -Name "DownloadLinkTesting" -Value $download -MemberType NoteProperty -Force

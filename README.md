@@ -12,26 +12,12 @@ The game’s share-code field has a length limit. Paste a long folder code and t
 
 This plugin takes the full import string and writes it into the in-game field, so the code is not truncated. You get the complete board or folder instead of a broken partial import.
 
-## Repository name
-
-Use **`StratBoardImport`**.
-
-It matches the plugin’s internal name, is easy to search, and reads clearly as an FFXIV/Dalamud project. `solid-palm-tree` is only GitHub’s placeholder name.
-
-Rename on GitHub: **Settings → General → Repository name → `StratBoardImport`**. After that, the install URL becomes:
-
-```text
-https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/pluginmaster.json
-```
-
-Until you rename it, use the current URL below.
-
 ## Install from GitHub
 
 Dalamud cannot install from `https://github.com/USER/REPO`. Add this **custom plugin repository** URL instead:
 
 ```text
-https://github.com/Dr0nhp/solid-palm-tree/releases/latest/download/pluginmaster.json
+https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/pluginmaster.json
 ```
 
 1. In game, open `/xlsettings`

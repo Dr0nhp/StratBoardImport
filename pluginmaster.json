@@ -1,12 +1,12 @@
 [
   {
-    "Author": "solid-palm-tree",
+    "Author": "Dr0nhp",
     "Name": "Strategy Board Import",
     "Punchline": "Importiert auch sehr lange Strategy-Board-Share-Codes.",
     "Description": "Fügt Strategy Boards aus Share-Codes ein, auch wenn der Code für das normale Importfeld zu lang ist. Ordner mit mehreren Seiten können als ein langer Code oder als mehrere [stgy:]-Codes eingefügt werden. Befehl: /sbi",
     "InternalName": "StratBoardImport",
     "AssemblyVersion": "1.0.0.0",
-    "RepoUrl": "https://github.com/Dr0nhp/solid-palm-tree",
+    "RepoUrl": "https://github.com/Dr0nhp/StratBoardImport",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 15,
     "LoadPriority": 0,
@@ -19,8 +19,8 @@
     ],
     "IsHide": false,
     "IsTestingExclusive": false,
-    "DownloadLinkInstall": "https://github.com/Dr0nhp/solid-palm-tree/releases/latest/download/latest.zip",
-    "DownloadLinkUpdate": "https://github.com/Dr0nhp/solid-palm-tree/releases/latest/download/latest.zip",
-    "DownloadLinkTesting": "https://github.com/Dr0nhp/solid-palm-tree/releases/latest/download/latest.zip"
+    "DownloadLinkInstall": "https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/latest.zip",
+    "DownloadLinkUpdate": "https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/latest.zip",
+    "DownloadLinkTesting": "https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/latest.zip"
   }
 ]

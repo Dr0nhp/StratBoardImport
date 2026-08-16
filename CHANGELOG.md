@@ -6,6 +6,9 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.0.2.0
+
+- Change - Plugin installer text is English (was German)
 - Docs - Added this changelog
 - Docs - Added evyx.gg to the share-code resource list
 

@@ -39,7 +39,7 @@ public sealed class Plugin : IDalamudPlugin
 
         CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
         {
-            HelpMessage = "Öffnet den Strategy-Board-Importer für lange Share-Codes.",
+            HelpMessage = "Opens the Strategy Board importer for long share codes.",
         });
 
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;

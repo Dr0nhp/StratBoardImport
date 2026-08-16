@@ -2,10 +2,10 @@
   {
     "Author": "Dr0nhp",
     "Name": "Strategy Board Import",
-    "Punchline": "Importiert auch sehr lange Strategy-Board-Share-Codes.",
-    "Description": "Fügt Strategy Boards aus Share-Codes ein, auch wenn der Code für das normale Importfeld zu lang ist. Mehrere [stgy:]-Codes können nacheinander in einen Ordner importiert werden. Befehl: /sbi",
+    "Punchline": "Import long Strategy Board share codes that the vanilla field truncates.",
+    "Description": "Writes Strategy Board share codes into the in-game import field, even when they are too long for the normal UI. Paste one code or several [stgy:] pages. Command: /sbi",
     "InternalName": "StratBoardImport",
-    "AssemblyVersion": "1.0.1.0",
+    "AssemblyVersion": "1.0.2.0",
     "RepoUrl": "https://github.com/Dr0nhp/StratBoardImport",
     "ApplicableVersion": "any",
     "DalamudApiLevel": 15,

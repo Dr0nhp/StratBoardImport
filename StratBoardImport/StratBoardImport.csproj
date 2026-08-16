@@ -1,14 +1,14 @@
 <Project Sdk="Dalamud.NET.Sdk/15.0.0">
   <PropertyGroup>
-    <Version>1.0.1.0</Version>
+    <Version>1.0.2.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Author>Dr0nhp</Author>
     <Name>Strategy Board Import</Name>
     <InternalName>StratBoardImport</InternalName>
-    <Punchline>Importiert auch sehr lange Strategy-Board-Share-Codes.</Punchline>
-    <Description>Fügt Strategy Boards aus Share-Codes ein, auch wenn der Code für das normale Importfeld zu lang ist. Mehrere [stgy:]-Codes können nacheinander in einen Ordner importiert werden. Befehl: /sbi</Description>
+    <Punchline>Import long Strategy Board share codes that the vanilla field truncates.</Punchline>
+    <Description>Writes Strategy Board share codes into the in-game import field, even when they are too long for the normal UI. Paste one code or several [stgy:] pages. Command: /sbi</Description>
     <RepoUrl>https://github.com/Dr0nhp/StratBoardImport</RepoUrl>
     <Tags>strategy;board;import;stgy;raid</Tags>
   </PropertyGroup>

@@ -1,0 +1,10 @@
+bin/
+obj/
+.vs/
+.cursor/
+*.user
+*.suo
+*.dll
+*.pdb
+*.deps.json
+*.runtimeconfig.json

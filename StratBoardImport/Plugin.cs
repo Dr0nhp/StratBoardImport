@@ -47,7 +47,7 @@ public sealed class Plugin : IDalamudPlugin
         PluginInterface.UiBuilder.OpenConfigUi += ToggleMainUi;
         Framework.Update += OnFrameworkUpdate;
 
-        Log.Information("Strategy Board Import geladen. Befehl: /sbi");
+        Log.Information("Strategy Board Import loaded. Command: /sbi");
     }
 
     public void Dispose()
@@ -70,7 +70,7 @@ public sealed class Plugin : IDalamudPlugin
             var first = parsed.FirstOrDefault(c => c.IsValid);
             if (first == null)
             {
-                ChatGui.PrintError("[SBI] Kein gültiger Share-Code in den Argumenten.");
+                ChatGui.PrintError("[SBI] No share code in the command arguments.");
                 ToggleMainUi();
                 return;
             }

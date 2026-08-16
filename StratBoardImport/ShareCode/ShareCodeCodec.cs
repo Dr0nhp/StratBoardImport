@@ -16,7 +16,7 @@ public static class ShareCodeCodec
     {
         var code = Unwrap(shareCode);
         if (code.Length < 2)
-            throw new InvalidDataException("Share-Code ist zu kurz.");
+            throw new InvalidDataException("Share code is too short.");
 
         var substituted = new char[code.Length];
         for (var i = 0; i < code.Length; i++)
@@ -48,11 +48,11 @@ public static class ShareCodeCodec
         }
         catch (FormatException ex)
         {
-            throw new InvalidDataException("Share-Code ist kein gültiges Base64.", ex);
+            throw new InvalidDataException("Share code is not valid Base64.", ex);
         }
 
         if (raw.Length < 8)
-            throw new InvalidDataException("Share-Code enthält zu wenig Daten.");
+            throw new InvalidDataException("Share code does not contain enough data.");
 
         try
         {
@@ -65,11 +65,11 @@ public static class ShareCodeCodec
             if (storedCrc != calculatedCrc)
             {
                 throw new InvalidDataException(
-                    $"Share-Code konnte nicht entpackt werden (CRC 0x{storedCrc:X8} != 0x{calculatedCrc:X8}).",
+                    $"Share code could not be unpacked (CRC 0x{storedCrc:X8} != 0x{calculatedCrc:X8}).",
                     ex);
             }
 
-            throw new InvalidDataException("Share-Code konnte nicht entpackt werden.", ex);
+            throw new InvalidDataException("Share code could not be unpacked.", ex);
         }
     }
 
@@ -121,11 +121,11 @@ public static class ShareCodeCodec
 
         const string prefix = "stgy:";
         if (!value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidDataException("Kein Strategy-Board-Share-Code ([stgy:...]).");
+            throw new InvalidDataException("Not a Strategy Board share code ([stgy:...]).");
 
         value = value[prefix.Length..];
         if (value.Length == 0)
-            throw new InvalidDataException("Share-Code hat keine Nutzlast.");
+            throw new InvalidDataException("Share code has no payload.");
 
         // First character after "stgy:" is the version letter (normally 'a').
         if (char.IsLetter(value[0]))

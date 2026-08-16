@@ -14,7 +14,7 @@ public sealed class MainWindow : Window, IDisposable
     private readonly Plugin plugin;
     private string input = string.Empty;
     private IReadOnlyList<ParsedShareCode> parsed = [];
-    private string status = "Share-Code einfügen und prüfen.";
+    private string status = "Paste a share code and check it.";
     private bool statusError;
     private int selectedIndex;
     private bool showAddonScan;
@@ -43,34 +43,33 @@ public sealed class MainWindow : Window, IDisposable
         SyncFolderJobStatus();
 
         ImGui.TextWrapped(
-            "Lange Strategy-Board-Codes (einzelne Boards oder Ordner mit mehreren Seiten) " +
-            "hier einfügen. Das Plugin schreibt den vollständigen String in das Spiel-Importfeld " +
-            "und umgeht damit das Längenlimit.");
+            "Paste long Strategy Board codes here (one board or several pages). " +
+            "The plugin writes the full string into the in-game import field, so the length limit does not cut it off.");
 
         ImGuiHelpers.ScaledDummy(6);
 
-        if (ImGui.Button("Aus Zwischenablage"))
+        if (ImGui.Button("From clipboard"))
         {
             input = ImGui.GetClipboardText() ?? string.Empty;
             ParseInput();
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Prüfen"))
+        if (ImGui.Button("Check"))
             ParseInput();
 
         ImGui.SameLine();
-        if (ImGui.Button("Leeren"))
+        if (ImGui.Button("Clear"))
         {
             input = string.Empty;
             parsed = [];
             selectedIndex = 0;
             folderName = string.Empty;
-            SetStatus("Eingabe geleert.", false);
+            SetStatus("Input cleared.", false);
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Strategy Board öffnen"))
+        if (ImGui.Button("Open Strategy Board"))
             plugin.Importer.OpenStrategyBoard();
 
         ImGuiHelpers.ScaledDummy(4);
@@ -88,7 +87,7 @@ public sealed class MainWindow : Window, IDisposable
 
     private void DrawParsedList()
     {
-        ImGui.Text($"Gefunden: {parsed.Count} Code(s), {input.Length} Zeichen");
+        ImGui.Text($"Found: {parsed.Count} code(s), {input.Length} characters");
         using var child = ImRaii.Child("parsed-codes", new Vector2(-1, 150 * ImGuiHelpers.GlobalScale), true);
         if (!child.Success)
             return;
@@ -96,10 +95,10 @@ public sealed class MainWindow : Window, IDisposable
         for (var i = 0; i < parsed.Count; i++)
         {
             var code = parsed[i];
-            var name = string.IsNullOrEmpty(code.Name) ? "Unbenannt" : code.Name;
+            var name = string.IsNullOrEmpty(code.Name) ? "Unnamed" : code.Name;
             var label = string.IsNullOrEmpty(code.Error)
-                ? $"{i + 1}. {name}  ({code.Length} Zeichen, {code.ObjectCount} Objekte)"
-                : $"{i + 1}. {name}  ({code.Length} Zeichen)  — {code.Error}";
+                ? $"{i + 1}. {name}  ({code.Length} chars, {code.ObjectCount} objects)"
+                : $"{i + 1}. {name}  ({code.Length} chars)  — {code.Error}";
 
             if (ImGui.Selectable(label, selectedIndex == i))
                 selectedIndex = i;
@@ -116,14 +115,14 @@ public sealed class MainWindow : Window, IDisposable
 
         using (ImRaii.Disabled(!canImportSelected))
         {
-            if (ImGui.Button("Ausgewählten Code importieren"))
+            if (ImGui.Button("Import selected code"))
                 ImportOne(parsed[selectedIndex].Code);
         }
 
         ImGui.SameLine();
         using (ImRaii.Disabled(validCount == 0))
         {
-            if (ImGui.Button(validCount <= 1 ? "Importieren" : $"Alle {validCount} Codes nacheinander kopieren"))
+            if (ImGui.Button(validCount <= 1 ? "Import" : $"Copy all {validCount} codes"))
             {
                 if (validCount == 1)
                 {
@@ -140,23 +139,23 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.SameLine();
         using (ImRaii.Disabled(validCount == 0))
         {
-            if (ImGui.Button("Ausgewählten Code kopieren"))
+            if (ImGui.Button("Copy selected code"))
             {
                 ImGui.SetClipboardText(parsed[selectedIndex].Code);
-                SetStatus("Code in die Zwischenablage kopiert.", false);
+                SetStatus("Code copied to the clipboard.", false);
             }
         }
 
         ImGui.SameLine();
         using (ImRaii.Disabled(string.IsNullOrWhiteSpace(input)))
         {
-            if (ImGui.Button("Roheingabe importieren"))
+            if (ImGui.Button("Import raw input"))
                 ImportOne(input.Trim());
         }
 
         ImGui.TextWrapped(
-            "Einzelimport: Strategy Board öffnen → Neue Strategie → Share-Code, dann hier Importieren. " +
-            "„Roheingabe importieren“ sendet den kompletten Text ungekürzt, auch wenn die Prüfung fehlschlägt.");
+            "Single import: open Strategy Board → New Strategy → Share Code, then click Import here. " +
+            "Import raw input sends the full text uncut, even if the check cannot decode a name.");
     }
 
     private void DrawFolderImport()
@@ -166,23 +165,23 @@ public sealed class MainWindow : Window, IDisposable
 
         ImGuiHelpers.ScaledDummy(6);
         ImGui.Separator();
-        ImGui.Text("Ordner-Import");
+        ImGui.Text("Folder import");
         ImGui.TextWrapped(
-            "Das Spiel hat keine öffentliche Ordner-API. Lege den Ordner im Strategy Board an oder öffne ihn " +
-            "(Name wird in die Zwischenablage kopiert). Danach für jede Seite Neue Strategie → Share-Code öffnen. " +
-            "Das Plugin füllt den Code und bestätigt automatisch. " +
-            $"Saved List: bis {FolderImportJob.MaxSavedBoards} Boards. Ein Ordner: bis {FolderImportJob.MaxBoardsPerFolder}. " +
-            "Mehr als 10 Seiten: zweiten Ordner nutzen oder den Rest in der Saved List lassen.");
+            "The game has no public folder API. Create or open the folder in Strategy Board " +
+            "(the name is copied to the clipboard). Then open New Strategy → Share Code for each page. " +
+            "The plugin fills the code and confirms it. " +
+            $"Saved List: up to {FolderImportJob.MaxSavedBoards} boards. One folder: up to {FolderImportJob.MaxBoardsPerFolder}. " +
+            "More than 10 pages: use a second folder or leave the rest in the Saved List.");
 
         ImGui.SetNextItemWidth(280 * ImGuiHelpers.GlobalScale);
         using (ImRaii.Disabled(job.IsRunning))
         {
-            ImGui.InputText("Ordnername", ref folderName, 64);
+            ImGui.InputText("Folder name", ref folderName, 64);
         }
 
         if (job.IsRunning)
         {
-            if (ImGui.Button("Ordner-Import abbrechen"))
+            if (ImGui.Button("Cancel folder import"))
             {
                 job.Cancel();
                 SetStatus(job.Status, false);
@@ -196,8 +195,8 @@ public sealed class MainWindow : Window, IDisposable
         else
         {
             var label = validCount >= 2
-                ? $"Alle {validCount} Boards in Ordner importieren"
-                : "Alle Boards in Ordner importieren";
+                ? $"Import all {validCount} boards into a folder"
+                : "Import all boards into a folder";
             using (ImRaii.Disabled(validCount < 2))
             {
                 if (ImGui.Button(label))
@@ -214,7 +213,7 @@ public sealed class MainWindow : Window, IDisposable
             }
 
             if (validCount < 2)
-                ImGui.TextDisabled("Mindestens zwei gültige [stgy:]-Codes nötig.");
+                ImGui.TextDisabled("Need at least two [stgy:] codes.");
         }
     }
 
@@ -231,34 +230,34 @@ public sealed class MainWindow : Window, IDisposable
 
     private void DrawSettings()
     {
-        if (!ImGui.CollapsingHeader("Einstellungen"))
+        if (!ImGui.CollapsingHeader("Settings"))
             return;
 
         var autoConfirm = plugin.Configuration.AutoConfirm;
-        if (ImGui.Checkbox("Nach dem Einfügen automatisch bestätigen", ref autoConfirm))
+        if (ImGui.Checkbox("Auto-confirm after filling the field", ref autoConfirm))
         {
             plugin.Configuration.AutoConfirm = autoConfirm;
             plugin.Configuration.Save();
         }
 
         var callbackId = plugin.Configuration.ConfirmCallbackId;
-        if (ImGui.InputInt("Callback-ID (OK-Button)", ref callbackId))
+        if (ImGui.InputInt("Callback ID (OK button)", ref callbackId))
         {
             plugin.Configuration.ConfirmCallbackId = Math.Max(0, callbackId);
             plugin.Configuration.Save();
         }
 
-        if (ImGui.Checkbox("Addon-Scan anzeigen (Debug)", ref showAddonScan) && showAddonScan)
+        if (ImGui.Checkbox("Show addon scan (debug)", ref showAddonScan) && showAddonScan)
             RefreshAddonScan();
 
         if (!showAddonScan)
             return;
 
-        if (ImGui.Button("Scan aktualisieren"))
+        if (ImGui.Button("Refresh scan"))
             RefreshAddonScan();
 
         ImGui.TextWrapped(plugin.LastAddonScan.Count == 0
-            ? "Keine sichtbaren Addons mit Textfeld gefunden."
+            ? "No visible addons with a text field found."
             : string.Join('\n', plugin.LastAddonScan));
     }
 
@@ -268,7 +267,7 @@ public sealed class MainWindow : Window, IDisposable
         selectedIndex = 0;
         if (parsed.Count == 0)
         {
-            SetStatus("Kein [stgy:...]-Code erkannt.", true);
+            SetStatus("No [stgy:...] code found.", true);
             return;
         }
 
@@ -276,9 +275,10 @@ public sealed class MainWindow : Window, IDisposable
         if (string.IsNullOrWhiteSpace(folderName) && valid > 0)
             folderName = FolderImportJob.DefaultFolderName(parsed);
 
-        SetStatus(valid == parsed.Count
-            ? $"{parsed.Count} gültige(r) Share-Code(s) erkannt."
-            : $"{valid}/{parsed.Count} Codes gültig. Ungültige Codes werden übersprungen.", valid == 0);
+        var decodeFailed = parsed.Count(c => !string.IsNullOrEmpty(c.Error));
+        SetStatus(decodeFailed == 0
+            ? $"{parsed.Count} share code(s) found."
+            : $"{parsed.Count} share code(s) found. {decodeFailed} name(s) could not be decoded.", decodeFailed == parsed.Count);
     }
 
     private void ImportOne(string code)
@@ -303,7 +303,7 @@ public sealed class MainWindow : Window, IDisposable
         var codes = parsed.Where(c => c.IsValid).Select(c => c.Code);
         ImGui.SetClipboardText(string.Join("\n\n", codes));
         SetStatus(
-            $"{parsed.Count(c => c.IsValid)} Codes in die Zwischenablage kopiert. Importiere sie nacheinander über das Share-Code-Fenster.",
+            $"{parsed.Count(c => c.IsValid)} codes copied to the clipboard. Import them one by one in the share-code window.",
             false);
     }
 

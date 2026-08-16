@@ -66,23 +66,23 @@ public sealed class FolderImportJob
         var valid = codes.Where(c => c.IsValid).ToList();
         if (valid.Count == 0)
         {
-            Fail("Keine gültigen Share-Codes.");
+            Fail("No share codes to import.");
             return false;
         }
 
         if (valid.Count > MaxSavedBoards)
         {
             Plugin.ChatGui.PrintError(
-                $"[SBI] Die Saved List darf nur {MaxSavedBoards} Boards enthalten. Es werden die ersten {MaxSavedBoards} importiert.");
+                $"[SBI] The Saved List holds at most {MaxSavedBoards} boards. Importing the first {MaxSavedBoards}.");
             valid = valid.Take(MaxSavedBoards).ToList();
         }
 
         if (valid.Count > MaxBoardsPerFolder)
         {
             Plugin.ChatGui.Print(
-                $"[SBI] {valid.Count} Boards: die Saved List schafft das (max. {MaxSavedBoards}). " +
-                $"Ein Ordner fasst nur {MaxBoardsPerFolder} — nach {MaxBoardsPerFolder} Seiten einen zweiten Ordner öffnen " +
-                "oder den Rest in der Saved List lassen.");
+                $"[SBI] {valid.Count} boards: the Saved List can hold them (max {MaxSavedBoards}). " +
+                $"A folder holds only {MaxBoardsPerFolder} — after {MaxBoardsPerFolder} pages, open a second folder " +
+                "or leave the rest in the Saved List.");
         }
 
         queue.Clear();
@@ -101,11 +101,11 @@ public sealed class FolderImportJob
         ImGui.SetClipboardText(FolderName);
 
         Status = totalCount > MaxBoardsPerFolder
-            ? $"Import von {totalCount} Boards. Ordner „{FolderName}“ anlegen (Name in der Zwischenablage). " +
-              $"Ein Ordner fasst {MaxBoardsPerFolder} Seiten — danach zweiten Ordner öffnen oder in der Saved List lassen. " +
-              $"Dann Neue Strategie → Share-Code. Seite {index + 1}/{totalCount} wird automatisch eingefügt."
-            : $"Ordner „{FolderName}“ anlegen oder öffnen (Name liegt in der Zwischenablage). " +
-              $"Dann Neue Strategie → Share-Code. Seite {index + 1}/{totalCount} wird automatisch eingefügt.";
+            ? $"Importing {totalCount} boards. Create folder \"{FolderName}\" (name is on the clipboard). " +
+              $"A folder holds {MaxBoardsPerFolder} pages — then open a second folder or leave the rest in the Saved List. " +
+              $"Then New Strategy → Share Code. Page {index + 1}/{totalCount} will be filled automatically."
+            : $"Create or open folder \"{FolderName}\" (name is on the clipboard). " +
+              $"Then New Strategy → Share Code. Page {index + 1}/{totalCount} will be filled automatically.";
         Plugin.ChatGui.Print($"[SBI] {Status}");
         return true;
     }
@@ -113,7 +113,7 @@ public sealed class FolderImportJob
     public void Cancel()
     {
         phase = Phase.Cancelled;
-        Status = "Ordner-Import abgebrochen.";
+        Status = "Folder import cancelled.";
         HasError = false;
         queue.Clear();
     }
@@ -158,10 +158,10 @@ public sealed class FolderImportJob
         }
 
         lastWindowName = addonName;
-        var title = string.IsNullOrEmpty(code.Name) ? $"Seite {index + 1}" : code.Name;
+        var title = string.IsNullOrEmpty(code.Name) ? $"Page {index + 1}" : code.Name;
         Status =
-            $"Importiert {index + 1}/{totalCount}: {title}. " +
-            "Wenn das Fenster offen bleibt, im Spiel auf OK klicken. Danach erneut Neue Strategie → Share-Code.";
+            $"Imported {index + 1}/{totalCount}: {title}. " +
+            "If the window stays open, click OK in game. Then open New Strategy → Share Code again.";
         Plugin.ChatGui.Print($"[SBI] {Status}");
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(400);
         phase = Phase.WaitingForWindowClose;
@@ -178,10 +178,10 @@ public sealed class FolderImportJob
         {
             phase = Phase.Done;
             Status = totalCount > MaxBoardsPerFolder
-                ? $"Fertig: {totalCount} Boards importiert. Maximal {MaxBoardsPerFolder} davon in den Ordner „{FolderName}“ ziehen, " +
-                  "den Rest in einen zweiten Ordner oder in der Saved List lassen."
-                : $"Fertig: {totalCount} Boards importiert. Falls sie nicht im Ordner „{FolderName}“ liegen, " +
-                  "im Strategy Board in diesen Ordner verschieben.";
+                ? $"Done: {totalCount} boards imported. Drag up to {MaxBoardsPerFolder} into folder \"{FolderName}\", " +
+                  "and put the rest in a second folder or the Saved List."
+                : $"Done: {totalCount} boards imported. If they are not in folder \"{FolderName}\", " +
+                  "drag them there in Strategy Board.";
             Plugin.ChatGui.Print($"[SBI] {Status}");
             queue.Clear();
             return;
@@ -189,7 +189,7 @@ public sealed class FolderImportJob
 
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(250);
         phase = Phase.WaitingForShareCodeWindow;
-        Status = $"Warte auf Share-Code-Fenster für Seite {index + 1}/{totalCount}.";
+        Status = $"Waiting for the share-code window for page {index + 1}/{totalCount}.";
     }
 
     private void Fail(string message)

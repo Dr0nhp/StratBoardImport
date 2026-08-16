@@ -30,7 +30,7 @@ public sealed unsafe class GameImporter
     public ImportResult Import(string shareCode, bool autoConfirm, int confirmCallbackId, bool requireShareCodeDialog)
     {
         if (string.IsNullOrWhiteSpace(shareCode))
-            return ImportResult.Fail("Kein Share-Code angegeben.");
+            return ImportResult.Fail("No share code given.");
 
         var found = requireShareCodeDialog
             ? FindShareCodeDialog(out var addon, out var textInput, out var addonName)
@@ -39,7 +39,7 @@ public sealed unsafe class GameImporter
         if (!found)
         {
             return ImportResult.Fail(
-                "Kein Share-Code-Eingabefeld gefunden. Öffne im Spiel: Strategy Board → Neue Strategie → Share-Code, und versuche es erneut.");
+                "No share-code input field found. In game open Strategy Board → New Strategy → Share Code, then try again.");
         }
 
         SetInputText(textInput, shareCode);
@@ -48,8 +48,8 @@ public sealed unsafe class GameImporter
             addon->FireCallbackInt(confirmCallbackId);
 
         return ImportResult.Ok(
-            $"Code ({shareCode.Length} Zeichen) in '{addonName}' geschrieben" +
-            (autoConfirm ? " und bestätigt." : ". Bitte im Spiel auf Übernehmen/OK klicken."));
+            $"Wrote code ({shareCode.Length} characters) into '{addonName}'" +
+            (autoConfirm ? " and confirmed it." : ". Click Apply/OK in the game window."));
     }
 
     public bool IsShareCodeWindowOpen(out string addonName)

@@ -6,6 +6,10 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.0.3.0
+
+- Change - All in-game plugin text is English
+
 ## 1.0.2.0
 
 - Change - Plugin installer text is English (was German)

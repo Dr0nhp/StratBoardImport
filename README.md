@@ -4,6 +4,14 @@ Dalamud plugin for Final Fantasy XIV. Imports long Strategy Board share codes (`
 
 In-game command: `/sbi`
 
+## Why this plugin exists
+
+FFXIV Strategy Boards can be shared as text codes. A single page is usually fine. A **folder with several pages** produces a much longer import string.
+
+The game’s share-code field has a length limit. Paste a long folder code and the client **cuts it off**. The import then fails, or only the first page comes through.
+
+This plugin takes the full import string and writes it into the in-game field, so the code is not truncated. You get the complete board or folder instead of a broken partial import.
+
 ## Repository name
 
 Use **`StratBoardImport`**.

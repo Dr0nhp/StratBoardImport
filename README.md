@@ -22,6 +22,7 @@ strategy boards
 │   ├── board.wtfdig.info     view, vote, and bundle share codes
 │   ├── wtfdig.info           fight pages that link out to boards
 │   ├── ffxivstrats.io        community strategies and collections
+│   ├── evyx.gg               video guides with in-game board collections
 │   └── aetherdraw.me         live whiteboard + searchable plan hub
 ├── editors & viewers
 │   ├── xivstrat.app          draw boards and export in-game codes
@@ -35,6 +36,7 @@ strategy boards
 - [board.wtfdig.info](https://board.wtfdig.info/) — view, bundle, and convert Strategy Board codes
 - [WTFDIG](https://wtfdig.info/) — current savage / ultimate / extreme helpers and board links
 - [FFXIVstrats](https://ffxivstrats.io/) — community strategy and collection pages
+- [Evyx](https://evyx.gg/) — fight guides with copyable Strategy Board collections
 - [AetherDraw](https://aetherdraw.me/) — collaborative planner with a public plan search
 - [XIVStrat / XIVPlan](https://xivstrat.app/) — web editor with export to in-game share codes
 - [stgy-tools](https://stgy.m4e.dev/) — browser viewer and editor for `[stgy:]` strings

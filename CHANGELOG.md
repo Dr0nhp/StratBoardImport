@@ -6,6 +6,12 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.1.0.0
+
+- Feature - In-game text is now in translation files (`de-DE`, `en-UK`, `fr-FR`, `ja-JP`)
+- Bugfix - Folder import waited forever because the share-code window was not recognised
+- Change - Saved List cap is total boards; folders have no separate 10-board limit
+
 ## 1.0.3.0
 
 - Change - All in-game plugin text is English

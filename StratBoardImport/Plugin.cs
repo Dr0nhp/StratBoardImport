@@ -6,6 +6,7 @@ using Dalamud.Interface.Windowing;
 using Dalamud.IoC;
 using Dalamud.Plugin;
 using Dalamud.Plugin.Services;
+using StratBoardImport.Localization;
 using StratBoardImport.Windows;
 
 namespace StratBoardImport;
@@ -20,6 +21,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IGameGui GameGui { get; private set; } = null!;
     [PluginService] internal static IPluginLog Log { get; private set; } = null!;
     [PluginService] internal static IFramework Framework { get; private set; } = null!;
+    [PluginService] internal static IClientState ClientState { get; private set; } = null!;
 
     public Configuration Configuration { get; }
     public GameImporter Importer { get; } = new();
@@ -29,25 +31,35 @@ public sealed class Plugin : IDalamudPlugin
 
     private readonly WindowSystem windowSystem = new("StratBoardImport");
     private readonly MainWindow mainWindow;
+    private readonly CommandInfo commandInfo;
 
     public Plugin()
     {
         Instance = this;
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        Loc.Initialize(PluginInterface, Configuration, ClientState, Log);
+
         mainWindow = new MainWindow(this);
         windowSystem.AddWindow(mainWindow);
 
-        CommandManager.AddHandler(CommandName, new CommandInfo(OnCommand)
+        commandInfo = new CommandInfo(OnCommand)
         {
-            HelpMessage = "Opens the Strategy Board importer for long share codes.",
-        });
+            HelpMessage = Loc.Get(L.CommandHelp),
+        };
+        CommandManager.AddHandler(CommandName, commandInfo);
 
         PluginInterface.UiBuilder.Draw += windowSystem.Draw;
         PluginInterface.UiBuilder.OpenMainUi += ToggleMainUi;
         PluginInterface.UiBuilder.OpenConfigUi += ToggleMainUi;
         Framework.Update += OnFrameworkUpdate;
 
-        Log.Information("Strategy Board Import loaded. Command: /sbi");
+        Log.Information(Loc.Get(L.LogLoaded));
+    }
+
+    public void ReloadLanguage()
+    {
+        Loc.Reload();
+        commandInfo.HelpMessage = Loc.Get(L.CommandHelp);
     }
 
     public void Dispose()
@@ -70,7 +82,7 @@ public sealed class Plugin : IDalamudPlugin
             var first = parsed.FirstOrDefault(c => c.IsValid);
             if (first == null)
             {
-                ChatGui.PrintError("[SBI] No share code in the command arguments.");
+                ChatGui.PrintError($"[SBI] {Loc.Get(L.CommandNoCode)}");
                 ToggleMainUi();
                 return;
             }

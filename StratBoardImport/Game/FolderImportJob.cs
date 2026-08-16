@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Dalamud.Bindings.ImGui;
+using StratBoardImport.Localization;
 
 namespace StratBoardImport;
 
 public sealed class FolderImportJob
 {
-    public const int MaxBoardsPerFolder = 10;
     public const int MaxSavedBoards = 50;
 
     private enum Phase
@@ -26,6 +26,7 @@ public sealed class FolderImportJob
     private int totalCount;
     private string lastWindowName = string.Empty;
     private DateTime waitUntilUtc = DateTime.MinValue;
+    private DateTime lastWaitHintUtc = DateTime.MinValue;
 
     public string FolderName { get; private set; } = string.Empty;
     public string Status { get; private set; } = string.Empty;
@@ -66,23 +67,14 @@ public sealed class FolderImportJob
         var valid = codes.Where(c => c.IsValid).ToList();
         if (valid.Count == 0)
         {
-            Fail("No share codes to import.");
+            Fail(Loc.Get(L.FolderNone));
             return false;
         }
 
         if (valid.Count > MaxSavedBoards)
         {
-            Plugin.ChatGui.PrintError(
-                $"[SBI] The Saved List holds at most {MaxSavedBoards} boards. Importing the first {MaxSavedBoards}.");
+            Plugin.ChatGui.PrintError($"[SBI] {Loc.Format(L.FolderSavedListCap, MaxSavedBoards)}");
             valid = valid.Take(MaxSavedBoards).ToList();
-        }
-
-        if (valid.Count > MaxBoardsPerFolder)
-        {
-            Plugin.ChatGui.Print(
-                $"[SBI] {valid.Count} boards: the Saved List can hold them (max {MaxSavedBoards}). " +
-                $"A folder holds only {MaxBoardsPerFolder} — after {MaxBoardsPerFolder} pages, open a second folder " +
-                "or leave the rest in the Saved List.");
         }
 
         queue.Clear();
@@ -92,6 +84,7 @@ public sealed class FolderImportJob
         FolderName = string.IsNullOrWhiteSpace(folderName) ? "Import" : folderName.Trim();
         lastWindowName = string.Empty;
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(250);
+        lastWaitHintUtc = DateTime.MinValue;
         phase = Phase.WaitingForShareCodeWindow;
         HasError = false;
 
@@ -100,12 +93,7 @@ public sealed class FolderImportJob
 
         ImGui.SetClipboardText(FolderName);
 
-        Status = totalCount > MaxBoardsPerFolder
-            ? $"Importing {totalCount} boards. Create folder \"{FolderName}\" (name is on the clipboard). " +
-              $"A folder holds {MaxBoardsPerFolder} pages — then open a second folder or leave the rest in the Saved List. " +
-              $"Then New Strategy → Share Code. Page {index + 1}/{totalCount} will be filled automatically."
-            : $"Create or open folder \"{FolderName}\" (name is on the clipboard). " +
-              $"Then New Strategy → Share Code. Page {index + 1}/{totalCount} will be filled automatically.";
+        Status = Loc.Format(L.FolderStart, FolderName, index + 1, totalCount);
         Plugin.ChatGui.Print($"[SBI] {Status}");
         return true;
     }
@@ -113,7 +101,7 @@ public sealed class FolderImportJob
     public void Cancel()
     {
         phase = Phase.Cancelled;
-        Status = "Folder import cancelled.";
+        Status = Loc.Get(L.FolderCancelled);
         HasError = false;
         queue.Clear();
     }
@@ -140,7 +128,10 @@ public sealed class FolderImportJob
     private void WaitForWindow()
     {
         if (!Plugin.Instance.Importer.IsShareCodeWindowOpen(out var addonName))
+        {
+            UpdateWaitingHint();
             return;
+        }
 
         if (addonName == lastWindowName)
             return;
@@ -158,10 +149,8 @@ public sealed class FolderImportJob
         }
 
         lastWindowName = addonName;
-        var title = string.IsNullOrEmpty(code.Name) ? $"Page {index + 1}" : code.Name;
-        Status =
-            $"Imported {index + 1}/{totalCount}: {title}. " +
-            "If the window stays open, click OK in game. Then open New Strategy → Share Code again.";
+        var title = string.IsNullOrEmpty(code.Name) ? Loc.Format(L.FolderPage, index + 1) : code.Name;
+        Status = Loc.Format(L.FolderImported, index + 1, totalCount, title);
         Plugin.ChatGui.Print($"[SBI] {Status}");
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(400);
         phase = Phase.WaitingForWindowClose;
@@ -177,19 +166,28 @@ public sealed class FolderImportJob
         if (index >= queue.Count)
         {
             phase = Phase.Done;
-            Status = totalCount > MaxBoardsPerFolder
-                ? $"Done: {totalCount} boards imported. Drag up to {MaxBoardsPerFolder} into folder \"{FolderName}\", " +
-                  "and put the rest in a second folder or the Saved List."
-                : $"Done: {totalCount} boards imported. If they are not in folder \"{FolderName}\", " +
-                  "drag them there in Strategy Board.";
+            Status = Loc.Format(L.FolderDone, totalCount, FolderName);
             Plugin.ChatGui.Print($"[SBI] {Status}");
             queue.Clear();
             return;
         }
 
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(250);
+        lastWaitHintUtc = DateTime.MinValue;
         phase = Phase.WaitingForShareCodeWindow;
-        Status = $"Waiting for the share-code window for page {index + 1}/{totalCount}.";
+        Status = Loc.Format(L.FolderWaiting, index + 1, totalCount);
+    }
+
+    private void UpdateWaitingHint()
+    {
+        if (DateTime.UtcNow - lastWaitHintUtc < TimeSpan.FromSeconds(1))
+            return;
+
+        lastWaitHintUtc = DateTime.UtcNow;
+        Status = Loc.Format(L.FolderWaiting, index + 1, totalCount) + " " + Loc.Get(L.FolderWaitingHint);
+        var addons = Plugin.Instance.Importer.ListVisibleTextInputNames();
+        if (addons.Count > 0)
+            Status += "\n" + Loc.Format(L.FolderVisibleAddons, string.Join(", ", addons));
     }
 
     private void Fail(string message)

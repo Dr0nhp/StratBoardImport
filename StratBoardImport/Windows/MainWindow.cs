@@ -6,6 +6,7 @@ using Dalamud.Bindings.ImGui;
 using Dalamud.Interface.Utility;
 using Dalamud.Interface.Utility.Raii;
 using Dalamud.Interface.Windowing;
+using StratBoardImport.Localization;
 
 namespace StratBoardImport.Windows;
 
@@ -14,7 +15,7 @@ public sealed class MainWindow : Window, IDisposable
     private readonly Plugin plugin;
     private string input = string.Empty;
     private IReadOnlyList<ParsedShareCode> parsed = [];
-    private string status = "Paste a share code and check it.";
+    private string status;
     private bool statusError;
     private int selectedIndex;
     private bool showAddonScan;
@@ -25,6 +26,7 @@ public sealed class MainWindow : Window, IDisposable
         : base("Strategy Board Import##StratBoardImport")
     {
         this.plugin = plugin;
+        status = Loc.Get(L.StatusPasteHint);
         SizeConstraints = new WindowSizeConstraints
         {
             MinimumSize = new Vector2(520, 480),
@@ -38,38 +40,41 @@ public sealed class MainWindow : Window, IDisposable
     {
     }
 
+    public override void PreDraw()
+    {
+        WindowName = Loc.Get(L.WindowTitle) + "##StratBoardImport";
+    }
+
     public override void Draw()
     {
         SyncFolderJobStatus();
 
-        ImGui.TextWrapped(
-            "Paste long Strategy Board codes here (one board or several pages). " +
-            "The plugin writes the full string into the in-game import field, so the length limit does not cut it off.");
+        ImGui.TextWrapped(Loc.Get(L.UiHeader));
 
         ImGuiHelpers.ScaledDummy(6);
 
-        if (ImGui.Button("From clipboard"))
+        if (ImGui.Button(Loc.Get(L.UiFromClipboard)))
         {
             input = ImGui.GetClipboardText() ?? string.Empty;
             ParseInput();
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Check"))
+        if (ImGui.Button(Loc.Get(L.UiCheck)))
             ParseInput();
 
         ImGui.SameLine();
-        if (ImGui.Button("Clear"))
+        if (ImGui.Button(Loc.Get(L.UiClear)))
         {
             input = string.Empty;
             parsed = [];
             selectedIndex = 0;
             folderName = string.Empty;
-            SetStatus("Input cleared.", false);
+            SetStatus(Loc.Get(L.StatusCleared), false);
         }
 
         ImGui.SameLine();
-        if (ImGui.Button("Open Strategy Board"))
+        if (ImGui.Button(Loc.Get(L.UiOpenStrategyBoard)))
             plugin.Importer.OpenStrategyBoard();
 
         ImGuiHelpers.ScaledDummy(4);
@@ -87,7 +92,7 @@ public sealed class MainWindow : Window, IDisposable
 
     private void DrawParsedList()
     {
-        ImGui.Text($"Found: {parsed.Count} code(s), {input.Length} characters");
+        ImGui.Text(Loc.Format(L.UiFoundCodes, parsed.Count, input.Length));
         using var child = ImRaii.Child("parsed-codes", new Vector2(-1, 150 * ImGuiHelpers.GlobalScale), true);
         if (!child.Success)
             return;
@@ -95,10 +100,10 @@ public sealed class MainWindow : Window, IDisposable
         for (var i = 0; i < parsed.Count; i++)
         {
             var code = parsed[i];
-            var name = string.IsNullOrEmpty(code.Name) ? "Unnamed" : code.Name;
+            var name = string.IsNullOrEmpty(code.Name) ? Loc.Get(L.UiUnnamed) : code.Name;
             var label = string.IsNullOrEmpty(code.Error)
-                ? $"{i + 1}. {name}  ({code.Length} chars, {code.ObjectCount} objects)"
-                : $"{i + 1}. {name}  ({code.Length} chars)  — {code.Error}";
+                ? Loc.Format(L.UiCodeRow, i + 1, name, code.Length, code.ObjectCount)
+                : Loc.Format(L.UiCodeRowError, i + 1, name, code.Length, code.Error);
 
             if (ImGui.Selectable(label, selectedIndex == i))
                 selectedIndex = i;
@@ -115,14 +120,14 @@ public sealed class MainWindow : Window, IDisposable
 
         using (ImRaii.Disabled(!canImportSelected))
         {
-            if (ImGui.Button("Import selected code"))
+            if (ImGui.Button(Loc.Get(L.UiImportSelected)))
                 ImportOne(parsed[selectedIndex].Code);
         }
 
         ImGui.SameLine();
         using (ImRaii.Disabled(validCount == 0))
         {
-            if (ImGui.Button(validCount <= 1 ? "Import" : $"Copy all {validCount} codes"))
+            if (ImGui.Button(validCount <= 1 ? Loc.Get(L.UiImport) : Loc.Format(L.UiCopyAll, validCount)))
             {
                 if (validCount == 1)
                 {
@@ -139,23 +144,21 @@ public sealed class MainWindow : Window, IDisposable
         ImGui.SameLine();
         using (ImRaii.Disabled(validCount == 0))
         {
-            if (ImGui.Button("Copy selected code"))
+            if (ImGui.Button(Loc.Get(L.UiCopySelected)))
             {
                 ImGui.SetClipboardText(parsed[selectedIndex].Code);
-                SetStatus("Code copied to the clipboard.", false);
+                SetStatus(Loc.Get(L.StatusCopiedOne), false);
             }
         }
 
         ImGui.SameLine();
         using (ImRaii.Disabled(string.IsNullOrWhiteSpace(input)))
         {
-            if (ImGui.Button("Import raw input"))
+            if (ImGui.Button(Loc.Get(L.UiImportRaw)))
                 ImportOne(input.Trim());
         }
 
-        ImGui.TextWrapped(
-            "Single import: open Strategy Board → New Strategy → Share Code, then click Import here. " +
-            "Import raw input sends the full text uncut, even if the check cannot decode a name.");
+        ImGui.TextWrapped(Loc.Get(L.UiSingleImportHelp));
     }
 
     private void DrawFolderImport()
@@ -165,23 +168,18 @@ public sealed class MainWindow : Window, IDisposable
 
         ImGuiHelpers.ScaledDummy(6);
         ImGui.Separator();
-        ImGui.Text("Folder import");
-        ImGui.TextWrapped(
-            "The game has no public folder API. Create or open the folder in Strategy Board " +
-            "(the name is copied to the clipboard). Then open New Strategy → Share Code for each page. " +
-            "The plugin fills the code and confirms it. " +
-            $"Saved List: up to {FolderImportJob.MaxSavedBoards} boards. One folder: up to {FolderImportJob.MaxBoardsPerFolder}. " +
-            "More than 10 pages: use a second folder or leave the rest in the Saved List.");
+        ImGui.Text(Loc.Get(L.UiFolderImport));
+        ImGui.TextWrapped(Loc.Format(L.UiFolderImportHelp, FolderImportJob.MaxSavedBoards));
 
         ImGui.SetNextItemWidth(280 * ImGuiHelpers.GlobalScale);
         using (ImRaii.Disabled(job.IsRunning))
         {
-            ImGui.InputText("Folder name", ref folderName, 64);
+            ImGui.InputText(Loc.Get(L.UiFolderName), ref folderName, 64);
         }
 
         if (job.IsRunning)
         {
-            if (ImGui.Button("Cancel folder import"))
+            if (ImGui.Button(Loc.Get(L.UiCancelFolderImport)))
             {
                 job.Cancel();
                 SetStatus(job.Status, false);
@@ -195,8 +193,8 @@ public sealed class MainWindow : Window, IDisposable
         else
         {
             var label = validCount >= 2
-                ? $"Import all {validCount} boards into a folder"
-                : "Import all boards into a folder";
+                ? Loc.Format(L.UiImportAllN, validCount)
+                : Loc.Get(L.UiImportAll);
             using (ImRaii.Disabled(validCount < 2))
             {
                 if (ImGui.Button(label))
@@ -213,7 +211,7 @@ public sealed class MainWindow : Window, IDisposable
             }
 
             if (validCount < 2)
-                ImGui.TextDisabled("Need at least two [stgy:] codes.");
+                ImGui.TextDisabled(Loc.Get(L.UiNeedTwoCodes));
         }
     }
 
@@ -230,35 +228,66 @@ public sealed class MainWindow : Window, IDisposable
 
     private void DrawSettings()
     {
-        if (!ImGui.CollapsingHeader("Settings"))
+        if (!ImGui.CollapsingHeader(Loc.Get(L.UiSettings)))
             return;
 
+        DrawLanguageCombo();
+
         var autoConfirm = plugin.Configuration.AutoConfirm;
-        if (ImGui.Checkbox("Auto-confirm after filling the field", ref autoConfirm))
+        if (ImGui.Checkbox(Loc.Get(L.UiAutoConfirm), ref autoConfirm))
         {
             plugin.Configuration.AutoConfirm = autoConfirm;
             plugin.Configuration.Save();
         }
 
         var callbackId = plugin.Configuration.ConfirmCallbackId;
-        if (ImGui.InputInt("Callback ID (OK button)", ref callbackId))
+        if (ImGui.InputInt(Loc.Get(L.UiCallbackId), ref callbackId))
         {
             plugin.Configuration.ConfirmCallbackId = Math.Max(0, callbackId);
             plugin.Configuration.Save();
         }
 
-        if (ImGui.Checkbox("Show addon scan (debug)", ref showAddonScan) && showAddonScan)
+        if (ImGui.Checkbox(Loc.Get(L.UiShowAddonScan), ref showAddonScan) && showAddonScan)
             RefreshAddonScan();
 
         if (!showAddonScan)
             return;
 
-        if (ImGui.Button("Refresh scan"))
+        if (ImGui.Button(Loc.Get(L.UiRefreshScan)))
             RefreshAddonScan();
 
         ImGui.TextWrapped(plugin.LastAddonScan.Count == 0
-            ? "No visible addons with a text field found."
+            ? Loc.Get(L.UiNoAddons)
             : string.Join('\n', plugin.LastAddonScan));
+    }
+
+    private void DrawLanguageCombo()
+    {
+        var selected = string.IsNullOrWhiteSpace(plugin.Configuration.Language)
+            ? Loc.Auto
+            : plugin.Configuration.Language;
+
+        ImGui.SetNextItemWidth(280 * ImGuiHelpers.GlobalScale);
+        if (!ImGui.BeginCombo(Loc.Get(L.UiLanguage), Loc.CultureLabel(selected)))
+            return;
+
+        if (ImGui.Selectable(Loc.CultureLabel(Loc.Auto), selected.Equals(Loc.Auto, StringComparison.OrdinalIgnoreCase)))
+            SetLanguage(Loc.Auto);
+
+        foreach (var culture in Loc.SupportedCultures)
+        {
+            if (ImGui.Selectable(Loc.CultureLabel(culture), selected.Equals(culture, StringComparison.OrdinalIgnoreCase)))
+                SetLanguage(culture);
+        }
+
+        ImGui.EndCombo();
+    }
+
+    private void SetLanguage(string culture)
+    {
+        plugin.Configuration.Language = culture;
+        plugin.Configuration.Save();
+        plugin.ReloadLanguage();
     }
 
     private void ParseInput()
@@ -267,7 +296,7 @@ public sealed class MainWindow : Window, IDisposable
         selectedIndex = 0;
         if (parsed.Count == 0)
         {
-            SetStatus("No [stgy:...] code found.", true);
+            SetStatus(Loc.Get(L.StatusNoCode), true);
             return;
         }
 
@@ -277,8 +306,9 @@ public sealed class MainWindow : Window, IDisposable
 
         var decodeFailed = parsed.Count(c => !string.IsNullOrEmpty(c.Error));
         SetStatus(decodeFailed == 0
-            ? $"{parsed.Count} share code(s) found."
-            : $"{parsed.Count} share code(s) found. {decodeFailed} name(s) could not be decoded.", decodeFailed == parsed.Count);
+            ? Loc.Format(L.StatusFound, parsed.Count)
+            : Loc.Format(L.StatusFoundWithDecodeErrors, parsed.Count, decodeFailed),
+            decodeFailed == parsed.Count);
     }
 
     private void ImportOne(string code)
@@ -302,9 +332,7 @@ public sealed class MainWindow : Window, IDisposable
     {
         var codes = parsed.Where(c => c.IsValid).Select(c => c.Code);
         ImGui.SetClipboardText(string.Join("\n\n", codes));
-        SetStatus(
-            $"{parsed.Count(c => c.IsValid)} codes copied to the clipboard. Import them one by one in the share-code window.",
-            false);
+        SetStatus(Loc.Format(L.StatusCopiedAll, parsed.Count(c => c.IsValid)), false);
     }
 
     private void RefreshAddonScan()

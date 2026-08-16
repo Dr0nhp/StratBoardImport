@@ -13,6 +13,11 @@ public sealed class Configuration : IPluginConfiguration
 
     public int ConfirmCallbackId { get; set; }
 
+    /// <summary>
+    /// Translation culture, or "auto" to follow the game client language.
+    /// </summary>
+    public string Language { get; set; } = Localization.Loc.Auto;
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

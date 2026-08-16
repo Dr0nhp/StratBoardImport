@@ -66,8 +66,8 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 ## Create a new release
 
 ```powershell
-git tag v1.0.3.0
-git push origin v1.0.3.0
+git tag v1.1.0.0
+git push origin v1.1.0.0
 ```
 
 GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.
@@ -107,6 +107,10 @@ The game has no public API to create folders or assign boards. The plugin assist
 4. Open **New Strategy → Share Code**. The plugin fills the next code and confirms it.
 5. Repeat step 4 for each remaining page.
 
-Game limits: **50** boards in the Saved List, **10** per folder, **20** temporary in the Shared List. Imports larger than 10 still run; split them across folders or leave extras in the Saved List. If boards land in the main list, drag them into a folder.
+Game limits: **50** boards in the Saved List in total. Folders only group those boards; they do not have a separate cap. Shared List: **20** temporary boards. If boards land in the main list, drag them into a folder.
 
-If the plugin cannot find the input field, leave the share-code window open and enable the addon scan under **Settings**.
+If the plugin cannot find the input field, leave the share-code window open and enable the addon scan under **Settings**. Language can be set there (`auto` follows the game client).
+
+## Translations
+
+In-game UI, chat, and errors are key-value JSON in `StratBoardImport/Localization/Translations/` (`en-UK`, `de-DE`, `fr-FR`, `ja-JP`). Keys are constants in `L.cs`. Add a new file to add a language.

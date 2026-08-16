@@ -29,6 +29,10 @@ public static class L
     public const string UiImportAllN = "ui.import_all_n";
     public const string UiImportAll = "ui.import_all";
     public const string UiNeedTwoCodes = "ui.need_two_codes";
+    public const string UiDeleteAllSaved = "ui.delete_all_saved";
+    public const string UiDeleteAllSavedConfirm = "ui.delete_all_saved_confirm";
+    public const string UiDeleteAllSavedCancel = "ui.delete_all_saved_cancel";
+    public const string UiDeleteAllSavedHelp = "ui.delete_all_saved_help";
     public const string UiSettings = "ui.settings";
     public const string UiAutoConfirm = "ui.auto_confirm";
     public const string UiAutoConfirmHelp = "ui.auto_confirm_help";
@@ -62,10 +66,15 @@ public static class L
     public const string ImportWroteManual = "import.wrote_manual";
     public const string ImportNativeOk = "import.native_ok";
     public const string ImportNativeFolderOk = "import.native_folder_ok";
+    public const string ImportNativeFolderSplitOk = "import.native_folder_split_ok";
+    public const string ImportNativeFolderPartialOk = "import.native_folder_partial_ok";
     public const string ImportNativeFull = "import.native_full";
     public const string ImportNativeUnavailable = "import.native_unavailable";
     public const string ImportNativeFailed = "import.native_failed";
     public const string ImportNativeFolderFailed = "import.native_folder_failed";
+    public const string DeleteAllEmpty = "delete.all_empty";
+    public const string DeleteAllOk = "delete.all_ok";
+    public const string DeleteAllPartial = "delete.all_partial";
 
     public const string FolderNone = "folder.none";
     public const string FolderSavedListCap = "folder.saved_list_cap";

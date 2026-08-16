@@ -6,6 +6,12 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.3.0.0
+
+- Bugfix - Folder import no longer duplicates boards in the Saved List root after a folder fills up
+- Change - A folder still holds 10 boards; extra pages go into `Name (2)`, `Name (3)`, …
+- Feature - Button to delete all Saved List boards and folders (click twice to confirm)
+
 ## 1.2.0.0
 
 - Feature - Import writes boards into the Saved List directly (no share-code window per page)

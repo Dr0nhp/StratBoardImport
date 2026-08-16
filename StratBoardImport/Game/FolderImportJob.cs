@@ -9,6 +9,7 @@ namespace StratBoardImport;
 public sealed class FolderImportJob
 {
     public const int MaxSavedBoards = 50;
+    public const int MaxBoardsPerFolder = 10;
 
     private enum Phase
     {

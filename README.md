@@ -66,8 +66,8 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 ## Create a new release
 
 ```powershell
-git tag v1.2.0.0
-git push origin v1.2.0.0
+git tag v1.3.0.0
+git push origin v1.3.0.0
 ```
 
 GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.
@@ -101,7 +101,9 @@ StratBoardImport/bin/x64/Release/StratBoardImport.dll
 2. Set a folder name (default: first board name).
 3. Click **Import all boards into a folder**. The plugin creates the folder if needed and writes every page into the Saved List.
 
-Game limits: **50** boards in the Saved List in total. Folders only group those boards; they do not have a separate cap. Shared List: **20** temporary boards.
+Game limits: **50** boards in the Saved List in total. A folder holds **10** boards; extra pages go into `Name (2)`, `Name (3)`, and so on. Shared List: **20** temporary boards.
+
+**Delete all saved boards** (click twice) clears the Saved List, including folders. The Shared List is not touched.
 
 If direct import is unavailable, the older share-code window flow is used. Leave that window open and enable the addon scan under **Settings**. Language can be set there (`auto` follows the game client).
 

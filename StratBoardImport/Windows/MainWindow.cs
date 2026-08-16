@@ -21,6 +21,7 @@ public sealed class MainWindow : Window, IDisposable
     private bool showAddonScan;
     private string folderName = string.Empty;
     private string lastJobStatus = string.Empty;
+    private bool confirmDeleteSaved;
 
     public MainWindow(Plugin plugin)
         : base("Strategy Board Import##StratBoardImport")
@@ -169,7 +170,7 @@ public sealed class MainWindow : Window, IDisposable
         ImGuiHelpers.ScaledDummy(6);
         ImGui.Separator();
         ImGui.Text(Loc.Get(L.UiFolderImport));
-        ImGui.TextWrapped(Loc.Format(L.UiFolderImportHelp, FolderImportJob.MaxSavedBoards));
+        ImGui.TextWrapped(Loc.Format(L.UiFolderImportHelp, FolderImportJob.MaxSavedBoards, FolderImportJob.MaxBoardsPerFolder));
 
         ImGui.SetNextItemWidth(280 * ImGuiHelpers.GlobalScale);
         using (ImRaii.Disabled(job.IsRunning))
@@ -213,6 +214,54 @@ public sealed class MainWindow : Window, IDisposable
             if (validCount < 2)
                 ImGui.TextDisabled(Loc.Get(L.UiNeedTwoCodes));
         }
+
+        DrawDeleteAllSaved();
+    }
+
+    private void DrawDeleteAllSaved()
+    {
+        var job = plugin.FolderJob;
+        var (boards, folders) = TofuImporter.GetSavedCounts();
+        var empty = boards == 0 && folders == 0;
+
+        ImGuiHelpers.ScaledDummy(4);
+        if (confirmDeleteSaved)
+        {
+            ImGui.PushStyleColor(ImGuiCol.Button, new Vector4(0.72f, 0.18f, 0.18f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.ButtonHovered, new Vector4(0.86f, 0.24f, 0.24f, 1f));
+            ImGui.PushStyleColor(ImGuiCol.ButtonActive, new Vector4(0.55f, 0.12f, 0.12f, 1f));
+            var clicked = false;
+            using (ImRaii.Disabled(job.IsRunning || empty))
+            {
+                clicked = ImGui.Button(Loc.Format(L.UiDeleteAllSavedConfirm, boards, folders));
+            }
+
+            ImGui.PopStyleColor(3);
+            if (clicked)
+            {
+                confirmDeleteSaved = false;
+                var result = TofuImporter.DeleteAllSaved();
+                SetStatus(result.Message, !result.Success);
+                if (result.Success)
+                    Plugin.ChatPrint(result.Message);
+                else
+                    Plugin.ChatPrintError(result.Message);
+            }
+
+            ImGui.SameLine();
+            if (ImGui.Button(Loc.Get(L.UiDeleteAllSavedCancel)))
+                confirmDeleteSaved = false;
+        }
+        else
+        {
+            using (ImRaii.Disabled(job.IsRunning || empty || !TofuImporter.IsAvailable))
+            {
+                if (ImGui.Button(Loc.Get(L.UiDeleteAllSaved)))
+                    confirmDeleteSaved = true;
+            }
+        }
+
+        ImGui.TextDisabled(Loc.Get(L.UiDeleteAllSavedHelp));
     }
 
     private void DrawStatus()

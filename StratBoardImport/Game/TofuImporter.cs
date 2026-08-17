@@ -290,7 +290,7 @@ public static unsafe class TofuImporter
         for (uint i = 0; i < count; i++)
         {
             var folder = tofu->GetFolderAtUIIndex(TofuType.Saved, i);
-            if (folder == null || !folder->IsValid)
+            if (folder == null || !folder->IsValid || folder->IsBoard)
                 continue;
             if (string.Equals(folder->NameString, name, StringComparison.Ordinal))
                 return i;
@@ -299,8 +299,9 @@ public static unsafe class TofuImporter
         return null;
     }
 
-    private static bool TryGetRootBoard(TofuModule* tofu, byte boardIndex, out byte positionInList)
+    private static bool TryGetBoard(TofuModule* tofu, byte boardIndex, out byte folderId, out byte positionInList)
     {
+        folderId = 0;
         positionInList = 0;
         var data = tofu->SavedBoardData;
         if (data == null)
@@ -310,8 +311,9 @@ public static unsafe class TofuImporter
         var max = Math.Min(span.Length, data->MaxCount);
         for (var i = 0; i < max; i++)
         {
-            if (!span[i].IsValid || span[i].Folder != 0 || span[i].Index != boardIndex)
+            if (!span[i].IsValid || span[i].Index != boardIndex)
                 continue;
+            folderId = span[i].Folder;
             positionInList = span[i].PositionInList;
             return true;
         }
@@ -319,60 +321,70 @@ public static unsafe class TofuImporter
         return false;
     }
 
-    private static bool TryDeleteRootBoard(TofuModule* tofu, byte boardIndex)
+    private static uint CountRealFolders(TofuModule* tofu)
     {
-        if (!TryGetRootBoard(tofu, boardIndex, out var positionInList))
+        var count = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
+        uint real = 0;
+        for (uint i = 0; i < count; i++)
         {
-            Plugin.Debug($"Skip delete: no root board idx={boardIndex}");
-            return false;
+            var folder = tofu->GetFolderAtUIIndex(TofuType.Saved, i);
+            if (folder != null && folder->IsValid && !folder->IsBoard)
+                real++;
         }
 
-        var folderCount = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
-        var boardCount = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
-        var mixedCount = folderCount + boardCount;
-        var byFolderApi = tofu->GetFolderIndexByBoardIndex(TofuType.Saved, boardIndex);
-        var byUiIndex = tofu->SavedBoardData->GetItemUIIndex(boardIndex);
-        var byOrder = tofu->SavedBoardData->GetItemOrderIndex(boardIndex);
-        Plugin.Debug($"Delete probe idx={boardIndex} pos={positionInList} folderCount={folderCount} boardCount={boardCount} mixedCount={mixedCount} GetFolderIndexByBoardIndex={byFolderApi} GetItemUIIndex={byUiIndex} GetItemOrderIndex={byOrder}");
-
-        uint? mixed = null;
-        if (byUiIndex >= folderCount && byUiIndex < mixedCount)
-            mixed = byUiIndex;
-        else if (positionInList >= folderCount && positionInList < mixedCount)
-            mixed = positionInList;
-        else if (byFolderApi >= (int)folderCount && byFolderApi < (int)mixedCount)
-            mixed = (uint)byFolderApi;
-
-        if (mixed == null)
-        {
-            Plugin.Debug("Skip delete: no mixed-list row after the folders.");
-            return false;
-        }
-
-        return DeleteMixedRoot(tofu, mixed.Value);
+        return real;
     }
 
-    private static bool DeleteMixedRoot(TofuModule* tofu, uint mixedIndex)
+    private static bool TryDeleteRootBoard(TofuModule* tofu, byte boardIndex)
     {
-        var foldersBefore = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
+        if (!TryGetBoard(tofu, boardIndex, out var folderId, out var positionInList))
+        {
+            Plugin.Debug($"Skip delete: no board idx={boardIndex}");
+            return false;
+        }
+
+        var slot = tofu->GetFolderAtUIIndex(TofuType.Saved, folderId);
+        Plugin.Debug($"Delete probe idx={boardIndex} folder={folderId} pos={positionInList} slot={(slot == null ? "null" : DescribeFolder(slot))}");
+
+        if (slot == null || !slot->IsValid)
+            return false;
+
+        // folder=0 here means "inside M9S" (real folder idx 0). Root leftovers point at
+        // a folder-array row with IsBoard=true (untitled mixed-list item).
+        if (!slot->IsBoard)
+        {
+            Plugin.Debug("Skip delete: Folder points at a named folder; that board is already inside it.");
+            return false;
+        }
+
+        var realFoldersBefore = CountRealFolders(tofu);
         var boardsBefore = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
-        Plugin.Debug($"DeleteItemAndContents mixedPos={mixedIndex} boards={boardsBefore} folders={foldersBefore}");
-        if (!tofu->DeleteItemAndContents(TofuType.Saved, mixedIndex))
+        var mixed = (uint)slot->PositionInList;
+        Plugin.Debug($"DeleteItemAndContents mixedPos={mixed} folderUi={folderId} boards={boardsBefore} realFolders={realFoldersBefore}");
+
+        var deleted = tofu->DeleteItemAndContents(TofuType.Saved, mixed);
+        if (!deleted && mixed != folderId)
+        {
+            Plugin.Debug("Delete at PositionInList failed; trying folder UI index.");
+            deleted = tofu->DeleteItemAndContents(TofuType.Saved, folderId);
+        }
+
+        if (!deleted)
         {
             Plugin.Debug("DeleteItemAndContents returned false.");
             return false;
         }
 
-        var foldersAfter = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
+        var realFoldersAfter = CountRealFolders(tofu);
         var boardsAfter = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
-        if (foldersAfter != foldersBefore)
+        if (realFoldersAfter != realFoldersBefore)
         {
-            Plugin.Log.Warning("[SBI] A folder was removed while deleting a root duplicate. Remaining boards may be missing.");
-            Plugin.Debug($"Delete removed a folder. boards {boardsBefore}->{boardsAfter} folders {foldersBefore}->{foldersAfter}");
+            Plugin.Log.Warning("[SBI] A named folder was removed while deleting a root duplicate.");
+            Plugin.Debug($"Delete removed a named folder. boards {boardsBefore}->{boardsAfter} realFolders {realFoldersBefore}->{realFoldersAfter}");
             return false;
         }
 
-        Plugin.Debug($"Delete result boards {boardsBefore}->{boardsAfter} folders {foldersAfter}");
+        Plugin.Debug($"Delete result boards {boardsBefore}->{boardsAfter} realFolders={realFoldersAfter}");
         return boardsAfter == boardsBefore - 1;
     }
 
@@ -403,7 +415,7 @@ public static unsafe class TofuImporter
 
         var boards = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
         var folders = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
-        Plugin.Debug($"SavedList[{tag}] boards={boards} folders={folders}");
+        Plugin.Debug($"SavedList[{tag}] boards={boards} folderRows={folders} realFolders={CountRealFolders(tofu)}");
 
         var boardData = tofu->SavedBoardData;
         if (boardData != null)

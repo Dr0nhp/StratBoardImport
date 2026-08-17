@@ -6,6 +6,10 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.5.2.0
+
+- Bugfix - Folder import removes the root duplicate by deleting the mixed-list board row, not the copy inside the folder
+
 ## 1.5.1.0
 
 - Bugfix - Folder import copies into the named folder; CreateBoard no longer spawns an empty folder per page

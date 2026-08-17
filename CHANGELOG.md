@@ -6,6 +6,8 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+- Docs - Plugin-use disclaimer on the README
+
 ## 1.6.3.0
 
 - Bugfix - Installer icon and cover are 512x512 and 730x380 PNG so Dalamud will show them

@@ -10,6 +10,10 @@ In-game command: `/sbi`
 
 See **[CHANGELOG.md](CHANGELOG.md)** for what changed in each version.
 
+## Disclaimer
+
+I do not condone the use of plugins. Use at your own risk. Bear in mind the terms of service. The use of plugins can lead to suspension of your FF account.
+
 ## Versioning
 
 Plugin versions are **`Y.X.A.B`**.

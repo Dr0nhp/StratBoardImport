@@ -6,6 +6,8 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+- Docs - Versioning (`Y.X.A.B`), `stable` / `main` branches, and a separate beta install URL
+
 ## 1.6.1.0
 
 - Bugfix - Library tree groups boards by folder identity, not UI row, so M9S / M9S (2) show the right pages

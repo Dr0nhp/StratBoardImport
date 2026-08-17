@@ -10,6 +10,35 @@ In-game command: `/sbi`
 
 See **[CHANGELOG.md](CHANGELOG.md)** for what changed in each version.
 
+## Versioning
+
+Plugin versions are **`Y.X.A.B`**.
+
+| Part | Bump when |
+|------|-----------|
+| **Y** | Breaking change or a new Dalamud API |
+| **X** | A real user-facing feature (Library tab, native import, …) |
+| **A** | Bugfix, polish, or debug tools |
+| **B** | Same bits rebuilt (usually `0`) |
+
+Example: **1.6.1.0** is Dalamud API 1, feature 6 (Library), first bugfix of that feature.
+
+## Branches and releases
+
+| Branch | Role |
+|--------|------|
+| **`stable`** | Last version we called good. Installers that use `releases/latest` track this. |
+| **`main`** | Development. New work and bug hunts land here first. |
+
+After a bugfix is proven in game, that build is **stable**. Newer unfinished work is **beta**.
+
+| Channel | Git tag | GitHub release | Dalamud custom repo URL |
+|---------|---------|----------------|-------------------------|
+| **Stable** | `v1.6.1.0` | Latest (not a pre-release) | `https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/pluginmaster.json` |
+| **Beta** | `v1.6.2.0-beta` | Pre-release, also copied to tag `beta` | `https://github.com/Dr0nhp/StratBoardImport/releases/download/beta/pluginmaster.json` |
+
+Beta tags must contain `-beta` so they never replace GitHub’s “latest” stable release.
+
 ## Why this plugin exists
 
 FFXIV Strategy Boards can be shared as `[stgy:...]` text codes. A single page is usually fine. A **folder with several pages** produces a much longer string.
@@ -55,11 +84,21 @@ strategy boards
 
 ## Install from GitHub
 
-Dalamud cannot install from `https://github.com/USER/REPO`. Add this **custom plugin repository** URL instead:
+Dalamud cannot install from `https://github.com/USER/REPO`. Add a **custom plugin repository** URL.
+
+**Stable** (default — last good build):
 
 ```text
 https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/pluginmaster.json
 ```
+
+**Beta** (development builds; may be unfinished):
+
+```text
+https://github.com/Dr0nhp/StratBoardImport/releases/download/beta/pluginmaster.json
+```
+
+Use one of those URLs, not both, unless you know you want two entries.
 
 1. In game, open `/xlsettings`
 2. Go to **Experimental**
@@ -69,16 +108,28 @@ https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/pluginmaster
 
 The GitHub repository must be **public**. Dalamud cannot download a zip from a private repo.
 
-`pluginmaster.json` and `latest.zip` are attached automatically when a `v*` tag is pushed (for example `v1.0.0.0`).
+`pluginmaster.json` and `latest.zip` are attached automatically when a `v*` tag is pushed.
 
 ## Create a new release
 
+Stable — merge proven `main` into `stable`, then tag without `-beta`:
+
 ```powershell
-git tag v1.6.1.0
-git push origin v1.6.1.0
+git checkout stable
+git merge main
+git push origin stable
+git tag v1.6.2.0
+git push origin v1.6.2.0
 ```
 
-GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.
+Beta — tag from `main` (or any development commit):
+
+```powershell
+git tag v1.6.2.0-beta
+git push origin v1.6.2.0-beta
+```
+
+GitHub Actions builds the plugin. Stable tags update `releases/latest`. Beta tags update the moving `beta` release.
 
 ## Local / dev install
 

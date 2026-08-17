@@ -1,6 +1,6 @@
 # StratBoardImport
 
-[![AI-DECLARATION: copilot](https://img.shields.io/badge/%E4%B7%BC%20AI--DECLARATION-copilot-fee2e2?labelColor=fee2e2)](./AI-DECLARATION.md)
+[![AI-DECLARATION: copilot](https://img.shields.io/badge/䷼%20AI--DECLARATION-copilot-fee2e2?labelColor=fee2e2)](./AI-DECLARATION.md)
 
 Dalamud plugin for Final Fantasy XIV. Display name: **Strategy Board Plus**. Internal name stays `StratBoardImport` so Dalamud updates and config keep working.
 

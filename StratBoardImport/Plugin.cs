@@ -24,6 +24,7 @@ public sealed class Plugin : IDalamudPlugin
     [PluginService] internal static IClientState ClientState { get; private set; } = null!;
 
     public Configuration Configuration { get; }
+    public BoardLibrary Library { get; }
     public GameImporter Importer { get; } = new();
     public FolderImportJob FolderJob { get; } = new();
     internal static Plugin Instance { get; private set; } = null!;
@@ -38,6 +39,7 @@ public sealed class Plugin : IDalamudPlugin
     {
         Instance = this;
         Configuration = PluginInterface.GetPluginConfig() as Configuration ?? new Configuration();
+        Library = new BoardLibrary(PluginInterface.ConfigDirectory.FullName);
         Loc.Initialize(PluginInterface, Configuration, ClientState, Log);
 
         mainWindow = new MainWindow(this);

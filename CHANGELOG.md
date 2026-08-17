@@ -6,6 +6,13 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.6.0.0
+
+- Feature - Library tab: checkbox tree of the Saved List and a plugin board attic
+- Feature - Save in-game boards to the plugin, send them back, delete checked rows in game
+- Feature - Export / import JSON packs for backup and websites
+- Change - Display name is Strategy Board Plus (internal name unchanged so updates keep working)
+
 ## 1.5.2.0
 
 - Bugfix - Folder import removes the root duplicate by deleting the mixed-list board row, not the copy inside the folder

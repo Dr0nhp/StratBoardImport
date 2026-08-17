@@ -1,6 +1,10 @@
 # StratBoardImport
 
-Dalamud plugin for Final Fantasy XIV. Imports long Strategy Board share codes (`[stgy:...]`) that the vanilla import field truncates.
+[![AI-DECLARATION: copilot](https://img.shields.io/badge/%E4%B7%BC%20AI--DECLARATION-copilot-fee2e2?labelColor=fee2e2)](./AI-DECLARATION.md)
+
+Dalamud plugin for Final Fantasy XIV. Display name: **Strategy Board Plus**. Internal name stays `StratBoardImport` so Dalamud updates and config keep working.
+
+Imports long Strategy Board share codes (`[stgy:...]`) that the vanilla import field truncates, and keeps extra boards in a plugin library beyond the game’s 50-slot Saved List.
 
 In-game command: `/sbi`
 
@@ -13,6 +17,8 @@ FFXIV Strategy Boards can be shared as `[stgy:...]` text codes. A single page is
 The game’s share-code field has a length limit. Paste a long folder code and the client **cuts it off**. The import then fails, or only the first page comes through.
 
 This plugin writes boards **straight into the Saved List**, so that length limit does not apply. Several pages go into a named folder (10 boards per folder; extras into `Name (2)`, `Name (3)`, …).
+
+The **Library** tab shows the Saved List as a tree. Check boards to delete them in game, copy them into the plugin (unlimited attic), send them back, or export JSON for backup and websites.
 
 The game also has **no bulk delete**. After a bad import, or when you want a clean slate, the plugin can wipe every saved board and folder in two clicks. The Shared List is left alone.
 
@@ -59,7 +65,7 @@ https://github.com/Dr0nhp/StratBoardImport/releases/latest/download/pluginmaster
 2. Go to **Experimental**
 3. Under **Custom Plugin Repositories**, paste the URL and confirm with **+**
 4. Save
-5. Open `/xlplugins`, search for **Strategy Board Import**, and install
+5. Open `/xlplugins`, search for **Strategy Board Plus**, and install
 
 The GitHub repository must be **public**. Dalamud cannot download a zip from a private repo.
 
@@ -68,8 +74,8 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 ## Create a new release
 
 ```powershell
-git tag v1.5.2.0
-git push origin v1.5.2.0
+git tag v1.6.0.0
+git push origin v1.6.0.0
 ```
 
 GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.
@@ -108,6 +114,15 @@ Game limits: **50** boards in the Saved List in total. A folder holds **10** boa
 **Delete all saved boards** (click twice) clears the Saved List, including folders. The Shared List is not touched.
 
 If direct import is unavailable, the older share-code window flow is used. Language and chat messages can be set under **Settings** (`auto` follows the game client).
+
+### Library
+
+1. Open the **Library** tab.
+2. Check folders or boards in **Saved List**.
+3. **Save to plugin** copies them onto disk (Dalamud config folder). The game list is unchanged.
+4. **Delete in game** removes checked Saved List rows. A named folder is only deleted if you check the folder (or every board in it).
+5. Check items under **Plugin library**, then **Send to game** (still 50 / 10 limits), **Remove from library**, or **Export JSON** to the clipboard.
+6. **Import JSON** reads a pack from the clipboard into the plugin. It does not write to the game until you send it.
 
 ## Translations
 

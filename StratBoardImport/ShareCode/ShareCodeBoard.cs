@@ -54,6 +54,125 @@ public static class ShareCodeBoard
         return ParseBinary(binary);
     }
 
+    public static byte[] ToBinary(DecodedBoard board)
+    {
+        var fields = new List<byte>();
+        if (!string.IsNullOrEmpty(board.Name))
+            WriteSizeString(fields, FieldTitle, board.Name);
+
+        foreach (var obj in board.Objects)
+        {
+            WriteU16(fields, FieldAllocate);
+            WriteU16(fields, obj.Type);
+            if (obj.Type == 100 && !string.IsNullOrEmpty(obj.Text))
+                WriteSizeString(fields, FieldLabel, obj.Text);
+        }
+
+        var count = board.Objects.Count;
+        if (count > 0)
+        {
+            WriteU16(fields, FieldFlags);
+            WriteU16(fields, 1);
+            WriteU16(fields, (ushort)count);
+            foreach (var obj in board.Objects)
+                WriteU16(fields, obj.Flags);
+
+            WriteU16(fields, FieldPosition);
+            WriteU16(fields, 3);
+            WriteU16(fields, (ushort)count);
+            foreach (var obj in board.Objects)
+            {
+                WriteU16(fields, obj.X);
+                WriteU16(fields, obj.Y);
+            }
+
+            WriteU16(fields, FieldAngle);
+            WriteU16(fields, 1);
+            WriteU16(fields, (ushort)count);
+            foreach (var obj in board.Objects)
+                WriteU16(fields, obj.Angle);
+
+            WriteU16(fields, FieldScale);
+            WriteU16(fields, 0);
+            WriteU16(fields, (ushort)count);
+            foreach (var obj in board.Objects)
+                fields.Add(obj.Scale);
+            if ((count & 1) != 0)
+                fields.Add(0);
+
+            WriteU16(fields, FieldColours);
+            WriteU16(fields, 2);
+            WriteU16(fields, (ushort)count);
+            foreach (var obj in board.Objects)
+            {
+                fields.Add(obj.R);
+                fields.Add(obj.G);
+                fields.Add(obj.B);
+                fields.Add(obj.A);
+            }
+
+            if (board.Objects.Exists(o => o.ArgsA != 0 || o.ArgsB != 0))
+            {
+                WriteU16(fields, FieldArgsAB);
+                WriteU16(fields, 3);
+                WriteU16(fields, (ushort)count);
+                foreach (var obj in board.Objects)
+                {
+                    WriteU16(fields, obj.ArgsA);
+                    WriteU16(fields, obj.ArgsB);
+                }
+            }
+
+            if (board.Objects.Exists(o => o.ArgsC != 0))
+            {
+                WriteU16(fields, FieldArgsC);
+                WriteU16(fields, 1);
+                WriteU16(fields, (ushort)count);
+                foreach (var obj in board.Objects)
+                    WriteU16(fields, obj.ArgsC);
+            }
+        }
+
+        var binary = new List<byte>(16 + 4 + fields.Count + 8);
+        WriteU32(binary, 1);
+        WriteU32(binary, (uint)(4 + fields.Count + 8));
+        WriteU32(binary, 0);
+        WriteU32(binary, 0);
+        WriteU16(binary, 0);
+        WriteU16(binary, (ushort)fields.Count);
+        binary.AddRange(fields);
+        WriteU16(binary, 3);
+        WriteU16(binary, 1);
+        WriteU16(binary, 1);
+        WriteU16(binary, board.Background);
+        return [.. binary];
+    }
+
+    private static void WriteSizeString(List<byte> dest, ushort field, string text)
+    {
+        var bytes = Encoding.UTF8.GetBytes(text);
+        var padded = (bytes.Length + 4) & ~3;
+        WriteU16(dest, field);
+        WriteU16(dest, (ushort)padded);
+        dest.AddRange(bytes);
+        for (var i = bytes.Length; i < padded; i++)
+            dest.Add(0);
+    }
+
+    private static void WriteU16(List<byte> dest, ushort value)
+    {
+        dest.Add((byte)value);
+        dest.Add((byte)(value >> 8));
+    }
+
+    private static void WriteU32(List<byte> dest, uint value)
+    {
+        dest.Add((byte)value);
+        dest.Add((byte)(value >> 8));
+        dest.Add((byte)(value >> 16));
+        dest.Add((byte)(value >> 24));
+    }
+
     public static DecodedBoard ParseBinary(ReadOnlySpan<byte> binary)
     {
         var board = new DecodedBoard();

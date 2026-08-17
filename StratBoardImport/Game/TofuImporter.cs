@@ -11,7 +11,7 @@ namespace StratBoardImport;
 /// <summary>
 /// Writes decoded share codes into the game's Strategy Board (Tofu) saved list.
 /// </summary>
-public static unsafe class TofuImporter
+public static unsafe partial class TofuImporter
 {
     private static bool reopenListWhenClosed;
     private static int reopenWaitTicks;

@@ -13,6 +13,45 @@ namespace StratBoardImport;
 /// </summary>
 public static class ShareCodeCodec
 {
+    public static string Encode(DecodedBoard board)
+        => EncodeBinary(ShareCodeBoard.ToBinary(board));
+
+    public static string EncodeBinary(byte[] binary)
+    {
+        byte[] compressed;
+        using (var output = new MemoryStream())
+        {
+            using (var zlib = new ZLibStream(output, CompressionLevel.SmallestSize, leaveOpen: true))
+                zlib.Write(binary, 0, binary.Length);
+            compressed = output.ToArray();
+        }
+
+        var payload = new byte[6 + compressed.Length];
+        BitConverter.TryWriteBytes(payload.AsSpan(4), (ushort)binary.Length);
+        compressed.CopyTo(payload, 6);
+        BitConverter.TryWriteBytes(payload.AsSpan(0), Crc32(payload.AsSpan(4)));
+
+        var urlSafe = Convert.ToBase64String(payload)
+            .TrimEnd('=')
+            .Replace('+', '-')
+            .Replace('/', '_');
+
+        var seed = payload[0] & 0x3F;
+        var obfuscated = new char[urlSafe.Length + 1];
+        obfuscated[0] = ValueToChar(seed);
+        for (var i = 0; i < urlSafe.Length; i++)
+        {
+            var value = (CharToValue(urlSafe[i]) + i + seed) & 0x3F;
+            obfuscated[i + 1] = ValueToChar(value);
+        }
+
+        var encoded = new char[obfuscated.Length];
+        for (var i = 0; i < obfuscated.Length; i++)
+            encoded[i] = SubstituteEncode(obfuscated[i]);
+
+        return $"[stgy:a{new string(encoded)}]";
+    }
+
     public static byte[] Decode(string shareCode)
     {
         var code = Unwrap(shareCode);
@@ -152,8 +191,21 @@ public static class ShareCodeCodec
         ['w'] = '1', ['x'] = 'u', ['y'] = 'z', ['z'] = 'Q',
     };
 
+    private static readonly Dictionary<char, char> EncodeSubstitution = BuildEncodeSubstitution();
+
+    private static Dictionary<char, char> BuildEncodeSubstitution()
+    {
+        var map = new Dictionary<char, char>();
+        foreach (var (from, to) in DecodeSubstitution)
+            map[to] = from;
+        return map;
+    }
+
     private static char SubstituteDecode(char character)
         => DecodeSubstitution.TryGetValue(character, out var mapped) ? mapped : character;
+
+    private static char SubstituteEncode(char character)
+        => EncodeSubstitution.TryGetValue(character, out var mapped) ? mapped : character;
 
     private static int CharToValue(char character)
     {

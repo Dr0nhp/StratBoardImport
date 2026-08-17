@@ -10,7 +10,7 @@ using StratBoardImport.Localization;
 
 namespace StratBoardImport.Windows;
 
-public sealed class MainWindow : Window, IDisposable
+public sealed partial class MainWindow : Window, IDisposable
 {
     private readonly Plugin plugin;
     private string input = string.Empty;
@@ -26,13 +26,13 @@ public sealed class MainWindow : Window, IDisposable
     private bool focusSettingsTab;
 
     public MainWindow(Plugin plugin)
-        : base("Strategy Board Import###StratBoardImport")
+        : base("Strategy Board Plus###StratBoardImport")
     {
         this.plugin = plugin;
         RespectCloseHotkey = true;
         SizeConstraints = new WindowSizeConstraints
         {
-            MinimumSize = new Vector2(420, 420),
+            MinimumSize = new Vector2(460, 460),
             MaximumSize = new Vector2(float.MaxValue, float.MaxValue),
         };
         Size = new Vector2(520, 560);
@@ -66,6 +66,12 @@ public sealed class MainWindow : Window, IDisposable
         {
             if (tab.Success)
                 DrawImportTab();
+        }
+
+        using (var tab = ImRaii.TabItem(Loc.Get(L.UiTabLibrary)))
+        {
+            if (tab.Success)
+                DrawLibraryTab();
         }
 
         var settingsFlags = focusSettingsTab ? ImGuiTabItemFlags.SetSelected : ImGuiTabItemFlags.None;

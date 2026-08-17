@@ -9,6 +9,7 @@ public static class L
 
     public const string UiHeader = "ui.header";
     public const string UiTabImport = "ui.tab_import";
+    public const string UiTabLibrary = "ui.tab_library";
     public const string UiTabSettings = "ui.tab_settings";
     public const string UiFromClipboard = "ui.from_clipboard";
     public const string UiCheck = "ui.check";
@@ -75,6 +76,39 @@ public static class L
     public const string DeleteAllEmpty = "delete.all_empty";
     public const string DeleteAllOk = "delete.all_ok";
     public const string DeleteAllPartial = "delete.all_partial";
+
+    public const string UiLibraryHeader = "ui.library_header";
+    public const string UiLibrarySaved = "ui.library_saved";
+    public const string UiLibraryPlugin = "ui.library_plugin";
+    public const string UiLibraryEmptyGame = "ui.library_empty_game";
+    public const string UiLibraryEmptyPlugin = "ui.library_empty_plugin";
+    public const string UiLibraryChecked = "ui.library_checked";
+    public const string UiLibraryPackName = "ui.library_pack_name";
+    public const string UiLibraryDeleteGame = "ui.library_delete_game";
+    public const string UiLibraryDeleteGameConfirm = "ui.library_delete_game_confirm";
+    public const string UiLibraryDeleteGameHelp = "ui.library_delete_game_help";
+    public const string UiLibrarySavePlugin = "ui.library_save_plugin";
+    public const string UiLibrarySavePluginHelp = "ui.library_save_plugin_help";
+    public const string UiLibrarySendGame = "ui.library_send_game";
+    public const string UiLibrarySendGameHelp = "ui.library_send_game_help";
+    public const string UiLibraryRemove = "ui.library_remove";
+    public const string UiLibraryRemoveConfirm = "ui.library_remove_confirm";
+    public const string UiLibraryRemoveHelp = "ui.library_remove_help";
+    public const string UiLibraryExportJson = "ui.library_export_json";
+    public const string UiLibraryExportJsonHelp = "ui.library_export_json_help";
+    public const string UiLibraryImportJson = "ui.library_import_json";
+    public const string UiLibraryImportJsonHelp = "ui.library_import_json_help";
+    public const string UiLibraryUnavailable = "ui.library_unavailable";
+    public const string LibraryNoneChecked = "library.none_checked";
+    public const string LibraryDeleteNone = "library.delete_none";
+    public const string LibraryDeleteOk = "library.delete_ok";
+    public const string LibrarySaved = "library.saved";
+    public const string LibrarySent = "library.sent";
+    public const string LibraryRemoved = "library.removed";
+    public const string LibraryExported = "library.exported";
+    public const string LibraryImported = "library.imported";
+    public const string LibraryImportFailed = "library.import_failed";
+    public const string LibraryEncodeFailed = "library.encode_failed";
 
     public const string FolderNone = "folder.none";
     public const string FolderSavedListCap = "folder.saved_list_cap";

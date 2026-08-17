@@ -281,6 +281,34 @@ public sealed class MainWindow : Window, IDisposable
         }
         Tooltip(L.UiShowChatMessagesHelp);
 
+        var debugLog = plugin.Configuration.DebugLog;
+        if (ImGui.Checkbox(Loc.Get(L.UiDebugLog), ref debugLog))
+        {
+            plugin.Configuration.DebugLog = debugLog;
+            plugin.Configuration.Save();
+            if (debugLog)
+            {
+                Plugin.ClearDebugLog();
+                Plugin.Debug("Developer log enabled.");
+            }
+        }
+        Tooltip(L.UiDebugLogHelp);
+
+        if (plugin.Configuration.DebugLog)
+        {
+            ImGui.SameLine();
+            if (ImGui.Button(Loc.Get(L.UiDebugLogCopy)))
+            {
+                if (Plugin.DebugLineCount == 0)
+                    SetStatus(L.StatusDebugEmpty, true);
+                else
+                {
+                    ImGui.SetClipboardText(Plugin.CopyDebugLog());
+                    SetStatus(L.StatusDebugCopied, false, Plugin.DebugLineCount);
+                }
+            }
+        }
+
         ImGuiHelpers.ScaledDummy(8);
         if (ImGui.Button(Loc.Get(L.UiOpenStrategyBoard)))
             plugin.Importer.OpenStrategyBoard();

@@ -42,13 +42,24 @@ public static unsafe class TofuImporter
         var folderSeries = 1;
         uint? folderIndex = null;
         var foldersUsed = new List<string>();
+        var validCodes = 0;
+        foreach (var c in codes)
+        {
+            if (c.IsValid)
+                validCodes++;
+        }
+
+        Plugin.Debug($"ImportMany start codes={codes.Count} valid={validCodes} folder=\"{baseFolderName}\" tofu={tofu != null}");
+        DumpSavedList(tofu, "before");
 
         if (useFolders)
         {
             folderIndex = NextFolderWithSpace(tofu, baseFolderName, ref folderSeries);
+            Plugin.Debug($"First folder series={folderSeries} uiIndex={folderIndex} name=\"{FolderSeriesName(baseFolderName, folderSeries)}\"");
             if (folderIndex == null)
                 return ImportResult.Fail(L.ImportNativeFolderFailed, folderName);
             foldersUsed.Add(FolderSeriesName(baseFolderName, folderSeries));
+            LogFolder(tofu, folderIndex.Value, "first");
         }
 
         var imported = 0;
@@ -79,21 +90,38 @@ public static unsafe class TofuImporter
                 if (folderIndex == null)
                 {
                     Plugin.Log.Warning("[SBI] No folder with free slots left; remaining boards stay in the Saved List root.");
+                    Plugin.Debug("Folder cap reached; remaining boards stay at root.");
                     useFolders = false;
                 }
+                else
+                    Plugin.Debug($"EnsureFolder uiIndex={folderIndex} series={folderSeries} inFolder={tofu->GetNumberOfBoardsInFolder(TofuType.Saved, folderIndex.Value)}");
             }
 
-            var created = CreateBoard(tofu, board, code.Name);
-            if (created == null)
-                continue;
-
+            TofuFolderEntry* folder = null;
             if (folderIndex != null)
+                folder = tofu->GetFolderAtUIIndex(TofuType.Saved, folderIndex.Value);
+
+            var inFolderBefore = folderIndex == null
+                ? 0u
+                : tofu->GetNumberOfBoardsInFolder(TofuType.Saved, folderIndex.Value);
+
+            var created = CreateBoard(tofu, board, code.Name, folder);
+            if (created == null)
             {
-                var rootIndex = created->Index;
+                Plugin.Debug($"CreateBoard returned null for \"{code.Name}\" folderUi={folderIndex} folderPtr={(folder == null ? "null" : DescribeFolder(folder))}");
+                continue;
+            }
+
+            Plugin.Debug($"Created \"{code.Name}\" {DescribeBoard(created)} wantedFolderUi={folderIndex} wantedFolder={(folder == null ? "null" : DescribeFolder(folder))} inFolderBefore={inFolderBefore} inFolderNow={(folderIndex == null ? 0 : tofu->GetNumberOfBoardsInFolder(TofuType.Saved, folderIndex.Value))}");
+
+            if (folderIndex != null && !IsBoardInFolder(created, tofu, folderIndex.Value, inFolderBefore))
+            {
+                Plugin.Debug("CreateBoard did not land in folder; trying CopyBoardToFolder.");
                 var copy = tofu->CopyBoardToFolder(TofuType.Saved, created, folderIndex.Value);
                 if (copy == null)
                 {
                     folderIndex = EnsureFolderHasSpace(tofu, baseFolderName, ref folderSeries, null, foldersUsed);
+                    Plugin.Debug($"Copy failed; retry folder uiIndex={folderIndex}");
                     if (folderIndex != null)
                         copy = tofu->CopyBoardToFolder(TofuType.Saved, created, folderIndex.Value);
                 }
@@ -101,24 +129,35 @@ public static unsafe class TofuImporter
                 if (copy != null)
                 {
                     inFolders++;
-                    if (!TryDeleteRootBoard(tofu, rootIndex))
-                        Plugin.Log.Warning($"[SBI] Copied a board into a folder but could not remove the root duplicate (index {rootIndex}).");
+                    Plugin.Debug($"Copied {DescribeBoard(copy)}; root still {DescribeBoard(created)}");
+                    if (!TryDeleteRootBoard(tofu, created))
+                    {
+                        Plugin.Log.Warning($"[SBI] Copied a board into a folder but could not remove the root duplicate (index {created->Index}).");
+                        Plugin.Debug("TryDeleteRootBoard failed.");
+                    }
+                    else
+                        Plugin.Debug("TryDeleteRootBoard succeeded.");
                 }
                 else
                 {
                     Plugin.Log.Warning("[SBI] CopyBoardToFolder failed; board was left in the Saved List root.");
+                    Plugin.Debug("CopyBoardToFolder failed.");
                 }
+            }
+            else if (folderIndex != null)
+            {
+                inFolders++;
+                Plugin.Debug("Counted as in-folder (no copy).");
             }
 
             imported++;
             lastName = string.IsNullOrEmpty(board.Name) ? code.Name : board.Name;
         }
 
-        if (imported == 0)
-            return ImportResult.Fail(L.ImportNativeFailed);
-
         tofu->HasChanges = true;
         tofu->SaveFile(true);
+        Plugin.Debug($"ImportMany done imported={imported} inFolders={inFolders} foldersUsed={foldersUsed.Count}");
+        DumpSavedList(tofu, "after save");
         RefreshListUi();
 
         if (!string.IsNullOrWhiteSpace(folderName) && imported > 1)
@@ -149,7 +188,7 @@ public static unsafe class TofuImporter
         return ImportResult.Ok(L.ImportNativeOk, lastName ?? "Board");
     }
 
-    private static TofuBoardEntry* CreateBoard(TofuModule* tofu, DecodedBoard board, string? fallbackName)
+    private static TofuBoardEntry* CreateBoard(TofuModule* tofu, DecodedBoard board, string? fallbackName, TofuFolderEntry* folder)
     {
         var entry = new TofuBoardEntry
         {
@@ -184,7 +223,14 @@ public static unsafe class TofuImporter
             entry.Objects[i] = obj;
         }
 
-        return tofu->CreateBoard(TofuType.Saved, &entry, true);
+        var notInFolder = true;
+        if (folder != null && folder->IsValid)
+        {
+            entry.Folder = (byte)(folder->Index + 1);
+            notInFolder = false;
+        }
+
+        return tofu->CreateBoard(TofuType.Saved, &entry, notInFolder);
     }
 
     private static uint? EnsureFolderHasSpace(
@@ -236,15 +282,22 @@ public static unsafe class TofuImporter
     {
         var existing = FindFolderIndex(tofu, name);
         if (existing != null)
+        {
+            Plugin.Debug($"Reusing folder \"{name}\" uiIndex={existing}");
             return existing;
+        }
 
         if (tofu->IsFull(TofuType.Saved, TofuItem.Folder))
             return null;
 
         var created = tofu->CreateFolder(TofuType.Saved, name);
         if (created == null)
+        {
+            Plugin.Debug($"CreateFolder \"{name}\" returned null.");
             return null;
+        }
 
+        Plugin.Debug($"CreateFolder \"{name}\" -> {DescribeFolder(created)}");
         return FindFolderIndex(tofu, name) ?? created->Index;
     }
 
@@ -263,38 +316,124 @@ public static unsafe class TofuImporter
         return null;
     }
 
-    private static bool TryDeleteRootBoard(TofuModule* tofu, byte boardIndex)
+    private static bool IsBoardInFolder(TofuBoardEntry* created, TofuModule* tofu, uint folderIndex, uint inFolderBefore)
     {
-        if (!tofu->IsItemValid(TofuType.Saved, TofuItem.Board, boardIndex))
-            return false;
+        if (created != null && created->Folder != 0)
+            return true;
 
-        // In-folder boards make this API return the folder's mixed-list row. Deleting that
-        // wipes the folder. Root boards return their own row in the mixed list.
-        var inFolder = tofu->GetBoardFolderIndexByBoardIndex(TofuType.Saved, boardIndex);
-        if (inFolder < 0)
-            return false;
-        if (inFolder != boardIndex)
-            return false;
+        return tofu->GetNumberOfBoardsInFolder(TofuType.Saved, folderIndex) > inFolderBefore;
+    }
 
-        var mixedIndex = tofu->GetFolderIndexByBoardIndex(TofuType.Saved, boardIndex);
-        if (mixedIndex < 0)
-            return false;
-
-        var foldersBefore = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
-        // Folders occupy the first mixed-list rows. Never delete those.
-        if (mixedIndex < foldersBefore)
-            return false;
-        var boardsBefore = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
-        if (!tofu->DeleteItemAndContents(TofuType.Saved, (uint)mixedIndex))
-            return false;
-
-        if (tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder) != foldersBefore)
+    private static bool TryDeleteRootBoard(TofuModule* tofu, TofuBoardEntry* board)
+    {
+        if (board == null || !board->IsValid || board->Folder != 0)
         {
-            Plugin.Log.Warning("[SBI] A folder was removed while deleting a root duplicate. Remaining boards may be missing.");
+            Plugin.Debug($"Skip delete: {(board == null ? "null" : DescribeBoard(board))}");
             return false;
         }
 
-        return tofu->TotalItemCount(TofuType.Saved, TofuItem.Board) == boardsBefore - 1;
+        var pos = board->PositionInList;
+        if (FolderOccupiesListPosition(tofu, pos))
+        {
+            Plugin.Debug($"Skip delete pos={pos}: a folder occupies that list row.");
+            return false;
+        }
+
+        var foldersBefore = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
+        var boardsBefore = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
+        Plugin.Debug($"DeleteItemAndContents mixedPos={pos} boards={boardsBefore} folders={foldersBefore}");
+        if (!tofu->DeleteItemAndContents(TofuType.Saved, pos))
+        {
+            Plugin.Debug("DeleteItemAndContents returned false.");
+            return false;
+        }
+
+        var foldersAfter = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
+        var boardsAfter = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
+        if (foldersAfter != foldersBefore)
+        {
+            Plugin.Log.Warning("[SBI] A folder was removed while deleting a root duplicate. Remaining boards may be missing.");
+            Plugin.Debug($"Delete removed a folder. boards {boardsBefore}->{boardsAfter} folders {foldersBefore}->{foldersAfter}");
+            return false;
+        }
+
+        Plugin.Debug($"Delete result boards {boardsBefore}->{boardsAfter} folders {foldersAfter}");
+        return boardsAfter == boardsBefore - 1;
+    }
+
+    private static bool FolderOccupiesListPosition(TofuModule* tofu, byte pos)
+    {
+        var data = tofu->SavedFolderData;
+        if (data == null)
+            return false;
+
+        var folders = data->Folders;
+        var max = Math.Min(folders.Length, data->MaxCount);
+        for (var i = 0; i < max; i++)
+        {
+            if (!folders[i].IsValid)
+                continue;
+            if (folders[i].PositionInList == pos)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static void LogFolder(TofuModule* tofu, uint uiIndex, string tag)
+    {
+        var folder = tofu->GetFolderAtUIIndex(TofuType.Saved, uiIndex);
+        Plugin.Debug($"Folder[{tag}] uiIndex={uiIndex} {(folder == null ? "null" : DescribeFolder(folder))} boardsInFolder={tofu->GetNumberOfBoardsInFolder(TofuType.Saved, uiIndex)}");
+    }
+
+    private static string DescribeBoard(TofuBoardEntry* board)
+    {
+        if (board == null)
+            return "board=null";
+        return $"board idx={board->Index} folder={board->Folder} pos={board->PositionInList} valid={board->IsValid} name=\"{board->NameString}\"";
+    }
+
+    private static string DescribeFolder(TofuFolderEntry* folder)
+    {
+        if (folder == null)
+            return "folder=null";
+        return $"folder idx={folder->Index} pos={folder->PositionInList} valid={folder->IsValid} isBoard={folder->IsBoard} name=\"{folder->NameString}\"";
+    }
+
+    private static void DumpSavedList(TofuModule* tofu, string tag)
+    {
+        if (!Plugin.DebugEnabled)
+            return;
+
+        var boards = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
+        var folders = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
+        Plugin.Debug($"SavedList[{tag}] boards={boards} folders={folders}");
+
+        var boardData = tofu->SavedBoardData;
+        if (boardData != null)
+        {
+            var span = boardData->Boards;
+            var max = Math.Min(span.Length, boardData->MaxCount);
+            for (var i = 0; i < max; i++)
+            {
+                if (!span[i].IsValid)
+                    continue;
+                Plugin.Debug($"  B[{i}] idx={span[i].Index} folder={span[i].Folder} pos={span[i].PositionInList} name=\"{span[i].NameString}\"");
+            }
+        }
+
+        var folderData = tofu->SavedFolderData;
+        if (folderData != null)
+        {
+            var span = folderData->Folders;
+            var max = Math.Min(span.Length, folderData->MaxCount);
+            for (var i = 0; i < max; i++)
+            {
+                if (!span[i].IsValid)
+                    continue;
+                Plugin.Debug($"  F[{i}] idx={span[i].Index} pos={span[i].PositionInList} isBoard={span[i].IsBoard} name=\"{span[i].NameString}\"");
+            }
+        }
     }
 
     public static (uint Boards, uint Folders) GetSavedCounts()

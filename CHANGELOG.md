@@ -6,6 +6,11 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.5.0.0
+
+- Feature - Settings include a developer log you can copy after an import
+- Bugfix - Folder import writes boards into the named folder instead of copying and leaving root duplicates
+
 ## 1.4.1.0
 
 - Bugfix - Folder import no longer deletes the folder (and its boards) after each page

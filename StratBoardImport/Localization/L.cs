@@ -42,6 +42,11 @@ public static class L
     public const string UiLanguage = "ui.language";
     public const string UiLanguageAuto = "ui.language_auto";
     public const string UiLanguageHelp = "ui.language_help";
+    public const string UiDebugLog = "ui.debug_log";
+    public const string UiDebugLogHelp = "ui.debug_log_help";
+    public const string UiDebugLogCopy = "ui.debug_log_copy";
+    public const string StatusDebugCopied = "status.debug_copied";
+    public const string StatusDebugEmpty = "status.debug_empty";
 
     public const string StatusPasteHint = "status.paste_hint";
     public const string StatusCleared = "status.cleared";

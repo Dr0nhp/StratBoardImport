@@ -27,6 +27,8 @@ public sealed class Plugin : IDalamudPlugin
     public GameImporter Importer { get; } = new();
     public FolderImportJob FolderJob { get; } = new();
     internal static Plugin Instance { get; private set; } = null!;
+    private static readonly List<string> debugLines = [];
+    private const int MaxDebugLines = 500;
 
     private readonly WindowSystem windowSystem = new("StratBoardImport");
     private readonly MainWindow mainWindow;
@@ -68,6 +70,27 @@ public sealed class Plugin : IDalamudPlugin
             return;
         ChatGui.PrintError($"[SBI] {message}");
     }
+
+    internal static bool DebugEnabled => Instance.Configuration.DebugLog;
+
+    internal static int DebugLineCount => debugLines.Count;
+
+    internal static void Debug(string message)
+    {
+        if (!DebugEnabled)
+            return;
+
+        var line = $"{DateTime.Now:HH:mm:ss.fff} {message}";
+        debugLines.Add(line);
+        if (debugLines.Count > MaxDebugLines)
+            debugLines.RemoveRange(0, debugLines.Count - MaxDebugLines);
+        Log.Information($"[SBI:dev] {message}");
+    }
+
+    internal static string CopyDebugLog()
+        => string.Join("\n", debugLines);
+
+    internal static void ClearDebugLog() => debugLines.Clear();
 
     public void ReloadLanguage()
     {

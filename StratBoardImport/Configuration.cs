@@ -26,6 +26,11 @@ public sealed class Configuration : IPluginConfiguration
     /// </summary>
     public bool ShowChatMessages { get; set; } = true;
 
+    /// <summary>
+    /// Write import/delete details to the Dalamud log and an in-plugin copy buffer.
+    /// </summary>
+    public bool DebugLog { get; set; }
+
     public void Save()
     {
         Plugin.PluginInterface.SavePluginConfig(this);

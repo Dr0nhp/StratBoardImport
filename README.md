@@ -27,10 +27,12 @@ Example: **1.6.1.0** is Dalamud API 1, feature 6 (Library), first bugfix of that
 
 | Branch | Role |
 |--------|------|
-| **`stable`** | Last version we called good. Installers that use `releases/latest` track this. |
-| **`main`** | Development. New work and bug hunts land here first. |
+| **`stable`** | Last version we called good. Protect this on GitHub. Installers that use `releases/latest` track this. |
+| **`dev`** | Development and betas. All new work and bug hunts land here. |
 
-After a bugfix is proven in game, that build is **stable**. Newer unfinished work is **beta**.
+Do not use **`main`**. Leave it frozen. On GitHub, set the default branch to **`dev`**.
+
+After a bugfix on `dev` is proven in game, merge it into **`stable`**. Unfinished work stays on `dev` and ships as **beta**.
 
 | Channel | Git tag | GitHub release | Dalamud custom repo URL |
 |---------|---------|----------------|-------------------------|
@@ -112,19 +114,20 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 
 ## Create a new release
 
-Stable — merge proven `main` into `stable`, then tag without `-beta`:
+Stable — merge proven `dev` into `stable`, then tag without `-beta`:
 
 ```powershell
 git checkout stable
-git merge main
+git merge dev
 git push origin stable
 git tag v1.6.2.0
 git push origin v1.6.2.0
 ```
 
-Beta — tag from `main` (or any development commit):
+Beta — tag from `dev`:
 
 ```powershell
+git checkout dev
 git tag v1.6.2.0-beta
 git push origin v1.6.2.0-beta
 ```

@@ -11,6 +11,8 @@
     <Description>Writes Strategy Board share codes into the Saved List, even when they are too long for the vanilla field. Paste one code or several [stgy:] pages into folders. Keep extra boards in a plugin library, send them back to the game, and export JSON for websites. Also clears saved boards (the game has no bulk delete). Command: /sbi</Description>
     <RepoUrl>https://github.com/Dr0nhp/StratBoardImport</RepoUrl>
     <Tags>strategy;board;import;stgy;raid</Tags>
+    <IconUrl>https://raw.githubusercontent.com/Dr0nhp/StratBoardImport/refs/heads/dev/images/icon.jpg</IconUrl>
+    <ImageUrls>https://raw.githubusercontent.com/Dr0nhp/StratBoardImport/refs/heads/dev/images/icon.jpg</ImageUrls>
   </PropertyGroup>
   <ItemGroup>
     <EmbeddedResource Include="Localization\Translations\*.json" />

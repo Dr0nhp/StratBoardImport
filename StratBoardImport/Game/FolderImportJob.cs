@@ -29,8 +29,28 @@ public sealed class FolderImportJob
     private DateTime waitUntilUtc = DateTime.MinValue;
     private DateTime lastWaitHintUtc = DateTime.MinValue;
 
+    private string statusKey = string.Empty;
+    private object?[] statusArgs = [];
+    private bool includeWaitingHint;
+    private string? visibleAddons;
+
     public string FolderName { get; private set; } = string.Empty;
-    public string Status { get; private set; } = string.Empty;
+    public string Status
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(statusKey))
+                return string.Empty;
+
+            var text = statusArgs is { Length: > 0 } ? Loc.Format(statusKey, statusArgs) : Loc.Get(statusKey);
+            if (includeWaitingHint)
+                text += " " + Loc.Get(L.FolderWaitingHint);
+            if (!string.IsNullOrEmpty(visibleAddons))
+                text += "\n" + Loc.Format(L.FolderVisibleAddons, visibleAddons);
+            return text;
+        }
+    }
+    public string StatusFingerprint => $"{statusKey}|{HasError}|{phase}|{index}|{includeWaitingHint}|{visibleAddons}";
     public bool HasError { get; private set; }
     public bool IsRunning => phase is Phase.WaitingForShareCodeWindow or Phase.WaitingForWindowClose;
     public int CurrentIndex => index;
@@ -68,7 +88,7 @@ public sealed class FolderImportJob
         var valid = codes.Where(c => c.IsValid).ToList();
         if (valid.Count == 0)
         {
-            Fail(Loc.Get(L.FolderNone));
+            Fail(L.FolderNone);
             return false;
         }
 
@@ -86,12 +106,14 @@ public sealed class FolderImportJob
         lastWindowName = string.Empty;
         lastWaitHintUtc = DateTime.MinValue;
         HasError = false;
+        includeWaitingHint = false;
+        visibleAddons = null;
 
         var native = TofuImporter.ImportMany(valid, FolderName);
         if (native.Success)
         {
             phase = Phase.Done;
-            Status = native.Message;
+            SetStatus(native);
             Plugin.ChatPrint(Status);
             queue.Clear();
             return true;
@@ -106,7 +128,7 @@ public sealed class FolderImportJob
             Plugin.Instance.Importer.OpenStrategyBoard();
 
         ImGui.SetClipboardText(FolderName);
-        Status = Loc.Format(L.FolderStart, FolderName, index + 1, totalCount);
+        SetStatus(L.FolderStart, FolderName, index + 1, totalCount);
         Plugin.ChatPrint(Status);
         return true;
     }
@@ -114,7 +136,7 @@ public sealed class FolderImportJob
     public void Cancel()
     {
         phase = Phase.Cancelled;
-        Status = Loc.Get(L.FolderCancelled);
+        SetStatus(L.FolderCancelled);
         HasError = false;
         queue.Clear();
     }
@@ -153,13 +175,13 @@ public sealed class FolderImportJob
         var result = Plugin.Instance.Importer.Import(code.Code, requireShareCodeDialog: true);
         if (!result.Success)
         {
-            Fail(result.Message);
+            Fail(result);
             return;
         }
 
         lastWindowName = addonName;
         var title = string.IsNullOrEmpty(code.Name) ? Loc.Format(L.FolderPage, index + 1) : code.Name;
-        Status = Loc.Format(L.FolderImported, index + 1, totalCount, title);
+        SetStatus(L.FolderImported, index + 1, totalCount, title);
         Plugin.ChatPrint(Status);
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(400);
         phase = Phase.WaitingForWindowClose;
@@ -175,7 +197,7 @@ public sealed class FolderImportJob
         if (index >= queue.Count)
         {
             phase = Phase.Done;
-            Status = Loc.Format(L.FolderDone, totalCount, FolderName);
+            SetStatus(L.FolderDone, totalCount, FolderName);
             Plugin.ChatPrint(Status);
             queue.Clear();
             return;
@@ -184,7 +206,7 @@ public sealed class FolderImportJob
         waitUntilUtc = DateTime.UtcNow.AddMilliseconds(250);
         lastWaitHintUtc = DateTime.MinValue;
         phase = Phase.WaitingForShareCodeWindow;
-        Status = Loc.Format(L.FolderWaiting, index + 1, totalCount);
+        SetStatus(L.FolderWaiting, index + 1, totalCount);
     }
 
     private void UpdateWaitingHint()
@@ -193,18 +215,30 @@ public sealed class FolderImportJob
             return;
 
         lastWaitHintUtc = DateTime.UtcNow;
-        Status = Loc.Format(L.FolderWaiting, index + 1, totalCount) + " " + Loc.Get(L.FolderWaitingHint);
+        SetStatus(L.FolderWaiting, index + 1, totalCount);
+        includeWaitingHint = true;
         var addons = Plugin.Instance.Importer.ListVisibleTextInputNames();
-        if (addons.Count > 0)
-            Status += "\n" + Loc.Format(L.FolderVisibleAddons, string.Join(", ", addons));
+        visibleAddons = addons.Count > 0 ? string.Join(", ", addons) : null;
     }
 
-    private void Fail(string message)
+    private void Fail(ImportResult result) => Fail(result.Key, result.Args);
+
+    private void Fail(string key, params object?[] args)
     {
         phase = Phase.Failed;
         HasError = true;
-        Status = message;
-        Plugin.ChatPrintError(message);
+        SetStatus(key, args);
+        Plugin.ChatPrintError(Status);
         queue.Clear();
+    }
+
+    private void SetStatus(ImportResult result) => SetStatus(result.Key, result.Args);
+
+    private void SetStatus(string key, params object?[] args)
+    {
+        statusKey = key;
+        statusArgs = args;
+        includeWaitingHint = false;
+        visibleAddons = null;
     }
 }

@@ -32,19 +32,19 @@ public sealed unsafe class GameImporter
     public ImportResult Import(string shareCode, bool requireShareCodeDialog = false)
     {
         if (string.IsNullOrWhiteSpace(shareCode))
-            return ImportResult.Fail(Loc.Get(L.ImportNoCode));
+            return ImportResult.Fail(L.ImportNoCode);
 
         var found = FindShareCodeDialog(out var addon, out var textInput, out var addonName);
         if (!found && !requireShareCodeDialog)
             found = FindShareCodeTarget(out addon, out textInput, out addonName);
 
         if (!found)
-            return ImportResult.Fail(Loc.Get(L.ImportNoField));
+            return ImportResult.Fail(L.ImportNoField);
 
         SetInputText(textInput, shareCode);
         ConfirmShareCodeDialog(addon, shareCode);
 
-        return ImportResult.Ok(Loc.Format(L.ImportWroteConfirmed, shareCode.Length, addonName));
+        return ImportResult.Ok(L.ImportWroteConfirmed, shareCode.Length, addonName);
     }
 
     private static void ConfirmShareCodeDialog(AtkUnitBase* addon, string shareCode)
@@ -382,8 +382,10 @@ public sealed unsafe class GameImporter
     }
 }
 
-public readonly record struct ImportResult(bool Success, string Message)
+public readonly record struct ImportResult(bool Success, string Key, object?[] Args)
 {
-    public static ImportResult Ok(string message) => new(true, message);
-    public static ImportResult Fail(string message) => new(false, message);
+    public string Message => Args is { Length: > 0 } ? Loc.Format(Key, Args) : Loc.Get(Key);
+
+    public static ImportResult Ok(string key, params object?[] args) => new(true, key, args);
+    public static ImportResult Fail(string key, params object?[] args) => new(false, key, args);
 }

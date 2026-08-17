@@ -6,6 +6,12 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.4.1.0
+
+- Bugfix - Folder import no longer deletes the folder (and its boards) after each page
+- Bugfix - Status text follows a language change
+- Change - Hover help wraps; parsed-code rows no longer show the raw share code
+
 ## 1.4.0.0
 
 - Bugfix - Folder import no longer leaves a second copy of each board in the Saved List root

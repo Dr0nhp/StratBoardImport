@@ -68,8 +68,8 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 ## Create a new release
 
 ```powershell
-git tag v1.4.0.0
-git push origin v1.4.0.0
+git tag v1.4.1.0
+git push origin v1.4.1.0
 ```
 
 GitHub Actions builds the plugin and attaches `latest.zip` plus `pluginmaster.json` to the release.

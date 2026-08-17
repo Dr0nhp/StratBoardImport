@@ -15,11 +15,13 @@ public sealed class MainWindow : Window, IDisposable
     private readonly Plugin plugin;
     private string input = string.Empty;
     private IReadOnlyList<ParsedShareCode> parsed = [];
-    private string status;
+    private string statusKey = L.StatusPasteHint;
+    private object?[] statusArgs = [];
     private bool statusError;
     private int selectedIndex;
     private string folderName = string.Empty;
-    private string lastJobStatus = string.Empty;
+    private string lastJobFingerprint = string.Empty;
+    private bool statusFromJob;
     private bool confirmDeleteSaved;
     private bool focusSettingsTab;
 
@@ -27,7 +29,6 @@ public sealed class MainWindow : Window, IDisposable
         : base("Strategy Board Import###StratBoardImport")
     {
         this.plugin = plugin;
-        status = Loc.Get(L.StatusPasteHint);
         RespectCloseHotkey = true;
         SizeConstraints = new WindowSizeConstraints
         {
@@ -99,7 +100,7 @@ public sealed class MainWindow : Window, IDisposable
             selectedIndex = 0;
             folderName = string.Empty;
             confirmDeleteSaved = false;
-            SetStatus(Loc.Get(L.StatusCleared), false);
+            SetStatus(L.StatusCleared, false);
         }
 
         ImGuiHelpers.ScaledDummy(4);
@@ -133,9 +134,6 @@ public sealed class MainWindow : Window, IDisposable
 
             if (ImGui.Selectable(label, selectedIndex == i))
                 selectedIndex = i;
-
-            if (ImGui.IsItemHovered())
-                ImGui.SetTooltip(code.Code.Length > 180 ? code.Code[..180] + "…" : code.Code);
         }
     }
 
@@ -150,7 +148,7 @@ public sealed class MainWindow : Window, IDisposable
             if (ImGui.Button(Loc.Get(L.UiCancelFolderImport)))
             {
                 job.Cancel();
-                SetStatus(job.Status, false);
+                FollowJobStatus();
             }
 
             if (job.TotalCount > 0)
@@ -190,7 +188,7 @@ public sealed class MainWindow : Window, IDisposable
             if (ImGui.Button(Loc.Get(L.UiCopySelected)))
             {
                 ImGui.SetClipboardText(parsed[selectedIndex].Code);
-                SetStatus(Loc.Get(L.StatusCopiedOne), false);
+                SetStatus(L.StatusCopiedOne, false);
             }
         }
     }
@@ -209,10 +207,8 @@ public sealed class MainWindow : Window, IDisposable
             ? FolderImportJob.DefaultFolderName(parsed)
             : folderName;
         folderName = name;
-        if (plugin.FolderJob.Start(parsed, name))
-            SetStatus(plugin.FolderJob.Status, false);
-        else
-            SetStatus(plugin.FolderJob.Status, true);
+        plugin.FolderJob.Start(parsed, name);
+        FollowJobStatus();
     }
 
     private void DrawSavedListRow()
@@ -238,7 +234,7 @@ public sealed class MainWindow : Window, IDisposable
             {
                 confirmDeleteSaved = false;
                 var result = TofuImporter.DeleteAllSaved();
-                SetStatus(result.Message, !result.Success);
+                SetStatus(result);
                 if (result.Success)
                     Plugin.ChatPrint(result.Message);
                 else
@@ -267,7 +263,7 @@ public sealed class MainWindow : Window, IDisposable
             color = new Vector4(0.95f, 0.85f, 0.4f, 1f);
 
         ImGui.PushTextWrapPos();
-        ImGui.TextColored(color, status);
+        ImGui.TextColored(color, StatusText());
         ImGui.PopTextWrapPos();
     }
 
@@ -327,7 +323,11 @@ public sealed class MainWindow : Window, IDisposable
             return;
 
         var text = args.Length == 0 ? Loc.Get(key) : Loc.Format(key, args);
-        ImGui.SetTooltip(text);
+        ImGui.BeginTooltip();
+        ImGui.PushTextWrapPos(ImGui.GetFontSize() * 28.0f);
+        ImGui.TextUnformatted(text);
+        ImGui.PopTextWrapPos();
+        ImGui.EndTooltip();
     }
 
     private void SetLanguage(string culture)
@@ -343,7 +343,7 @@ public sealed class MainWindow : Window, IDisposable
         selectedIndex = 0;
         if (parsed.Count == 0)
         {
-            SetStatus(Loc.Get(L.StatusNoCode), true);
+            SetStatus(L.StatusNoCode, true);
             return;
         }
 
@@ -352,10 +352,10 @@ public sealed class MainWindow : Window, IDisposable
             folderName = FolderImportJob.DefaultFolderName(parsed);
 
         var decodeFailed = parsed.Count(c => !string.IsNullOrEmpty(c.Error));
-        SetStatus(decodeFailed == 0
-            ? Loc.Format(L.StatusFound, parsed.Count)
-            : Loc.Format(L.StatusFoundWithDecodeErrors, parsed.Count, decodeFailed),
-            decodeFailed == parsed.Count);
+        if (decodeFailed == 0)
+            SetStatus(L.StatusFound, false, parsed.Count);
+        else
+            SetStatus(L.StatusFoundWithDecodeErrors, decodeFailed == parsed.Count, parsed.Count, decodeFailed);
     }
 
     private void ImportOne(string code)
@@ -367,13 +367,13 @@ public sealed class MainWindow : Window, IDisposable
         var native = TofuImporter.ImportOne(code);
         if (native.Success)
         {
-            SetStatus(native.Message, false);
+            SetStatus(native);
             Plugin.ChatPrint(native.Message);
             return;
         }
 
         var result = plugin.Importer.Import(code);
-        SetStatus(result.Message, !result.Success);
+        SetStatus(result);
         if (result.Success)
             Plugin.ChatPrint(result.Message);
         else
@@ -383,17 +383,44 @@ public sealed class MainWindow : Window, IDisposable
     private void SyncFolderJobStatus()
     {
         var job = plugin.FolderJob;
-        if (job.Status == lastJobStatus)
+        var fingerprint = job.StatusFingerprint;
+        if (fingerprint == lastJobFingerprint)
             return;
 
-        lastJobStatus = job.Status;
+        lastJobFingerprint = fingerprint;
         if (!string.IsNullOrEmpty(job.Status))
-            SetStatus(job.Status, job.HasError);
+            FollowJobStatus();
     }
 
-    private void SetStatus(string message, bool error)
+    private void FollowJobStatus()
     {
-        status = message;
+        var job = plugin.FolderJob;
+        statusFromJob = true;
+        statusError = job.HasError;
+        lastJobFingerprint = job.StatusFingerprint;
+    }
+
+    private void SetStatus(ImportResult result)
+    {
+        statusFromJob = false;
+        statusKey = result.Key;
+        statusArgs = result.Args;
+        statusError = !result.Success;
+    }
+
+    private void SetStatus(string key, bool error, params object?[] args)
+    {
+        statusFromJob = false;
+        statusKey = key;
+        statusArgs = args;
         statusError = error;
+    }
+
+    private string StatusText()
+    {
+        if (statusFromJob)
+            return plugin.FolderJob.Status;
+
+        return statusArgs is { Length: > 0 } ? Loc.Format(statusKey, statusArgs) : Loc.Get(statusKey);
     }
 }

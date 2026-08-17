@@ -16,6 +16,7 @@ public sealed class SavedListSnapshot
 public sealed class SavedFolderInfo
 {
     public uint UiIndex { get; init; }
+    public byte FolderIndex { get; init; }
     public byte PositionInList { get; init; }
     public string Name { get; init; } = string.Empty;
     public List<SavedBoardInfo> Boards { get; } = [];
@@ -51,7 +52,7 @@ public static unsafe partial class TofuImporter
         snapshot.FolderCount = CountRealFolders(tofu);
         snapshot.BoardCount = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
 
-        var foldersByUi = new Dictionary<uint, SavedFolderInfo>();
+        var foldersByIndex = new Dictionary<byte, SavedFolderInfo>();
         for (uint i = 0; i < folderCount; i++)
         {
             var folder = tofu->GetFolderAtUIIndex(TofuType.Saved, i);
@@ -61,11 +62,12 @@ public static unsafe partial class TofuImporter
             var info = new SavedFolderInfo
             {
                 UiIndex = i,
+                FolderIndex = folder->Index,
                 PositionInList = folder->PositionInList,
                 Name = folder->NameString,
             };
             snapshot.Folders.Add(info);
-            foldersByUi[i] = info;
+            foldersByIndex[folder->Index] = info;
         }
 
         var data = tofu->SavedBoardData;
@@ -83,9 +85,7 @@ public static unsafe partial class TofuImporter
                 Board = CopyBoard(span[i]),
             };
 
-            var folderField = span[i].Folder;
-            var slot = tofu->GetFolderAtUIIndex(TofuType.Saved, folderField);
-            if (slot != null && slot->IsValid && !slot->IsBoard && foldersByUi.TryGetValue(folderField, out var folder))
+            if (foldersByIndex.TryGetValue(span[i].Folder, out var folder))
                 folder.Boards.Add(info);
             else
                 snapshot.RootBoards.Add(info);
@@ -164,13 +164,11 @@ public static unsafe partial class TofuImporter
     private static int RestoreBoards(TofuModule* tofu, List<DecodedBoard> boards, string folderName)
     {
         var restored = 0;
-        uint? folderIndex = FindFolderIndex(tofu, folderName);
-        if (folderIndex == null)
+        if (FindNamedFolder(tofu, folderName) == null)
         {
             var created = tofu->CreateFolder(TofuType.Saved, folderName);
             if (created == null)
                 return 0;
-            folderIndex = FindFolderIndex(tofu, folderName) ?? created->Index;
         }
 
         foreach (var board in boards)
@@ -183,7 +181,10 @@ public static unsafe partial class TofuImporter
                 continue;
 
             var rootIndex = created->Index;
-            var copy = tofu->CopyBoardToFolder(TofuType.Saved, created, folderIndex.Value);
+            var slot = FindNamedFolder(tofu, folderName);
+            var copy = slot == null
+                ? null
+                : TryCopyBoardToFolder(tofu, created, slot.Value);
             if (copy != null)
                 TryDeleteRootBoard(tofu, rootIndex);
             restored++;
@@ -194,19 +195,15 @@ public static unsafe partial class TofuImporter
 
     private static bool TryDeleteNamedFolder(TofuModule* tofu, string name)
     {
-        var index = FindFolderIndex(tofu, name);
-        if (index == null)
+        var slot = FindNamedFolder(tofu, name);
+        if (slot == null)
             return false;
 
-        var slot = tofu->GetFolderAtUIIndex(TofuType.Saved, index.Value);
-        if (slot == null || !slot->IsValid || slot->IsBoard)
-            return false;
-
-        var mixed = (uint)slot->PositionInList;
+        var mixed = (uint)slot.Value.PositionInList;
         var realBefore = CountRealFolders(tofu);
         var deleted = tofu->DeleteItemAndContents(TofuType.Saved, mixed);
-        if (!deleted && mixed != index.Value)
-            deleted = tofu->DeleteItemAndContents(TofuType.Saved, index.Value);
+        if (!deleted && mixed != slot.Value.UiIndex)
+            deleted = tofu->DeleteItemAndContents(TofuType.Saved, slot.Value.UiIndex);
 
         if (!deleted)
             return false;
@@ -227,8 +224,8 @@ public static unsafe partial class TofuImporter
             if (!span[i].IsValid || !BoardsMatch(span[i], target))
                 continue;
 
-            var slot = tofu->GetFolderAtUIIndex(TofuType.Saved, span[i].Folder);
-            if (slot != null && slot->IsValid && !slot->IsBoard)
+            var entry = FindFolderEntryByIndex(tofu, span[i].Folder);
+            if (entry != null && entry->IsValid && !entry->IsBoard)
                 continue;
 
             return TryDeleteRootBoard(tofu, span[i].Index);

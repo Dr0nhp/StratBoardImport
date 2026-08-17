@@ -6,6 +6,13 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.6.1.0
+
+- Bugfix - Library tree groups boards by folder identity, not UI row, so M9S / M9S (2) show the right pages
+- Bugfix - Folder import copies into the named folder that still has space when another folder is first in the list
+- Bugfix - Delete in game finds the mixed-list row by folder index after the list shrinks
+- Bugfix - Library tree hover no longer covers the checkbox
+
 ## 1.6.0.0
 
 - Feature - Library tab: checkbox tree of the Saved List and a plugin board attic

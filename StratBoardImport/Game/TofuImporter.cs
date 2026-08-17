@@ -40,7 +40,7 @@ public static unsafe partial class TofuImporter
         var useFolders = !string.IsNullOrWhiteSpace(folderName);
         var baseFolderName = useFolders ? folderName!.Trim() : string.Empty;
         var folderSeries = 1;
-        uint? folderIndex = null;
+        FolderSlot? targetFolder = null;
         var foldersUsed = new List<string>();
         var validCodes = 0;
         foreach (var c in codes)
@@ -54,12 +54,12 @@ public static unsafe partial class TofuImporter
 
         if (useFolders)
         {
-            folderIndex = NextFolderWithSpace(tofu, baseFolderName, ref folderSeries);
-            Plugin.Debug($"First folder series={folderSeries} uiIndex={folderIndex} name=\"{FolderSeriesName(baseFolderName, folderSeries)}\"");
-            if (folderIndex == null)
+            targetFolder = NextFolderWithSpace(tofu, baseFolderName, ref folderSeries);
+            Plugin.Debug($"First folder series={folderSeries} {DescribeSlot(targetFolder)} name=\"{FolderSeriesName(baseFolderName, folderSeries)}\"");
+            if (targetFolder == null)
                 return ImportResult.Fail(L.ImportNativeFolderFailed, folderName);
             foldersUsed.Add(FolderSeriesName(baseFolderName, folderSeries));
-            LogFolder(tofu, folderIndex.Value, "first");
+            LogFolder(tofu, targetFolder.Value.UiIndex, "first");
         }
 
         var imported = 0;
@@ -86,15 +86,15 @@ public static unsafe partial class TofuImporter
 
             if (useFolders)
             {
-                folderIndex = EnsureFolderHasSpace(tofu, baseFolderName, ref folderSeries, folderIndex, foldersUsed);
-                if (folderIndex == null)
+                targetFolder = EnsureFolderHasSpace(tofu, baseFolderName, ref folderSeries, targetFolder, foldersUsed);
+                if (targetFolder == null)
                 {
                     Plugin.Log.Warning("[SBI] No folder with free slots left; remaining boards stay in the Saved List root.");
                     Plugin.Debug("Folder cap reached; remaining boards stay at root.");
                     useFolders = false;
                 }
                 else
-                    Plugin.Debug($"EnsureFolder uiIndex={folderIndex} series={folderSeries} inFolder={tofu->GetNumberOfBoardsInFolder(TofuType.Saved, folderIndex.Value)}");
+                    Plugin.Debug($"EnsureFolder {DescribeSlot(targetFolder)} series={folderSeries} inFolder={CountBoardsInNamedFolder(tofu, targetFolder.Value.Index)}");
             }
 
             var created = CreateBoard(tofu, board, code.Name);
@@ -106,16 +106,16 @@ public static unsafe partial class TofuImporter
 
             Plugin.Debug($"Created \"{code.Name}\" {DescribeBoard(created)}");
 
-            if (folderIndex != null)
+            if (targetFolder != null)
             {
                 var rootIndex = created->Index;
-                var copy = tofu->CopyBoardToFolder(TofuType.Saved, created, folderIndex.Value);
+                var copy = TryCopyBoardToFolder(tofu, created, targetFolder.Value);
                 if (copy == null)
                 {
-                    folderIndex = EnsureFolderHasSpace(tofu, baseFolderName, ref folderSeries, null, foldersUsed);
-                    Plugin.Debug($"Copy failed; retry folder uiIndex={folderIndex}");
-                    if (folderIndex != null)
-                        copy = tofu->CopyBoardToFolder(TofuType.Saved, created, folderIndex.Value);
+                    targetFolder = EnsureFolderHasSpace(tofu, baseFolderName, ref folderSeries, null, foldersUsed);
+                    Plugin.Debug($"Copy failed; retry {DescribeSlot(targetFolder)}");
+                    if (targetFolder != null)
+                        copy = TryCopyBoardToFolder(tofu, created, targetFolder.Value);
                 }
 
                 if (copy != null)
@@ -216,20 +216,24 @@ public static unsafe partial class TofuImporter
         return tofu->CreateBoard(TofuType.Saved, &entry, true);
     }
 
-    private static uint? EnsureFolderHasSpace(
+    private readonly struct FolderSlot
+    {
+        public uint UiIndex { get; init; }
+        public byte Index { get; init; }
+        public byte PositionInList { get; init; }
+    }
+
+    private static FolderSlot? EnsureFolderHasSpace(
         TofuModule* tofu,
         string baseName,
         ref int series,
-        uint? currentIndex,
+        FolderSlot? current,
         List<string> foldersUsed)
     {
-        if (currentIndex != null &&
-            tofu->GetNumberOfBoardsInFolder(TofuType.Saved, currentIndex.Value) < FolderImportJob.MaxBoardsPerFolder)
-        {
-            return currentIndex;
-        }
+        if (current != null && CountBoardsInNamedFolder(tofu, current.Value.Index) < FolderImportJob.MaxBoardsPerFolder)
+            return current;
 
-        if (currentIndex != null)
+        if (current != null)
             series++;
 
         var next = NextFolderWithSpace(tofu, baseName, ref series);
@@ -242,17 +246,17 @@ public static unsafe partial class TofuImporter
         return next;
     }
 
-    private static uint? NextFolderWithSpace(TofuModule* tofu, string baseName, ref int series)
+    private static FolderSlot? NextFolderWithSpace(TofuModule* tofu, string baseName, ref int series)
     {
         var maxFolders = (int)Math.Max(1, tofu->MaxItemAllowed(TofuType.Saved, TofuItem.Folder));
         for (; series <= maxFolders; series++)
         {
             var name = FolderSeriesName(baseName, series);
-            var index = GetOrCreateFolder(tofu, name);
-            if (index == null)
+            var slot = GetOrCreateFolder(tofu, name);
+            if (slot == null)
                 continue;
-            if (tofu->GetNumberOfBoardsInFolder(TofuType.Saved, index.Value) < FolderImportJob.MaxBoardsPerFolder)
-                return index;
+            if (CountBoardsInNamedFolder(tofu, slot.Value.Index) < FolderImportJob.MaxBoardsPerFolder)
+                return slot;
         }
 
         return null;
@@ -261,12 +265,12 @@ public static unsafe partial class TofuImporter
     private static string FolderSeriesName(string baseName, int series)
         => series <= 1 ? baseName : $"{baseName} ({series})";
 
-    private static uint? GetOrCreateFolder(TofuModule* tofu, string name)
+    private static FolderSlot? GetOrCreateFolder(TofuModule* tofu, string name)
     {
-        var existing = FindFolderIndex(tofu, name);
+        var existing = FindNamedFolder(tofu, name);
         if (existing != null)
         {
-            Plugin.Debug($"Reusing folder \"{name}\" uiIndex={existing}");
+            Plugin.Debug($"Reusing folder \"{name}\" {DescribeSlot(existing)}");
             return existing;
         }
 
@@ -281,10 +285,15 @@ public static unsafe partial class TofuImporter
         }
 
         Plugin.Debug($"CreateFolder \"{name}\" -> {DescribeFolder(created)}");
-        return FindFolderIndex(tofu, name) ?? created->Index;
+        return FindNamedFolder(tofu, name) ?? new FolderSlot
+        {
+            UiIndex = created->Index,
+            Index = created->Index,
+            PositionInList = created->PositionInList,
+        };
     }
 
-    private static uint? FindFolderIndex(TofuModule* tofu, string name)
+    private static FolderSlot? FindNamedFolder(TofuModule* tofu, string name)
     {
         var count = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
         for (uint i = 0; i < count; i++)
@@ -292,12 +301,73 @@ public static unsafe partial class TofuImporter
             var folder = tofu->GetFolderAtUIIndex(TofuType.Saved, i);
             if (folder == null || !folder->IsValid || folder->IsBoard)
                 continue;
-            if (string.Equals(folder->NameString, name, StringComparison.Ordinal))
-                return i;
+            if (!string.Equals(folder->NameString, name, StringComparison.Ordinal))
+                continue;
+
+            return new FolderSlot
+            {
+                UiIndex = i,
+                Index = folder->Index,
+                PositionInList = folder->PositionInList,
+            };
         }
 
         return null;
     }
+
+    private static TofuFolderEntry* FindFolderEntryByIndex(TofuModule* tofu, byte index)
+    {
+        var count = tofu->TotalItemCount(TofuType.Saved, TofuItem.Folder);
+        for (uint i = 0; i < count; i++)
+        {
+            var folder = tofu->GetFolderAtUIIndex(TofuType.Saved, i);
+            if (folder != null && folder->IsValid && folder->Index == index)
+                return folder;
+        }
+
+        return null;
+    }
+
+    private static uint CountBoardsInNamedFolder(TofuModule* tofu, byte folderIndex)
+    {
+        var named = FindFolderEntryByIndex(tofu, folderIndex);
+        if (named == null || named->IsBoard)
+            return 0;
+
+        uint n = 0;
+        var data = tofu->SavedBoardData;
+        if (data == null)
+            return 0;
+
+        var span = data->Boards;
+        var max = Math.Min(span.Length, data->MaxCount);
+        for (var i = 0; i < max; i++)
+        {
+            if (span[i].IsValid && span[i].Folder == folderIndex)
+                n++;
+        }
+
+        return n;
+    }
+
+    private static TofuBoardEntry* TryCopyBoardToFolder(TofuModule* tofu, TofuBoardEntry* board, FolderSlot folder)
+    {
+        Plugin.Debug($"CopyBoardToFolder using Index={folder.Index} (ui={folder.UiIndex} pos={folder.PositionInList})");
+        var copy = tofu->CopyBoardToFolder(TofuType.Saved, board, folder.Index);
+        if (copy != null)
+            return copy;
+
+        if (folder.UiIndex != folder.Index)
+        {
+            Plugin.Debug($"Copy with Index failed; trying UiIndex={folder.UiIndex}");
+            copy = tofu->CopyBoardToFolder(TofuType.Saved, board, folder.UiIndex);
+        }
+
+        return copy;
+    }
+
+    private static string DescribeSlot(FolderSlot? slot)
+        => slot == null ? "folder=null" : $"uiIndex={slot.Value.UiIndex} idx={slot.Value.Index} pos={slot.Value.PositionInList}";
 
     private static bool TryGetBoard(TofuModule* tofu, byte boardIndex, out byte folderId, out byte positionInList)
     {
@@ -343,14 +413,14 @@ public static unsafe partial class TofuImporter
             return false;
         }
 
-        var slot = tofu->GetFolderAtUIIndex(TofuType.Saved, folderId);
+        var slot = FindFolderEntryByIndex(tofu, folderId);
         Plugin.Debug($"Delete probe idx={boardIndex} folder={folderId} pos={positionInList} slot={(slot == null ? "null" : DescribeFolder(slot))}");
 
         if (slot == null || !slot->IsValid)
             return false;
 
-        // folder=0 here means "inside M9S" (real folder idx 0). Root leftovers point at
-        // a folder-array row with IsBoard=true (untitled mixed-list item).
+        // Board.Folder is the folder-array Index. Named folders are real; root leftovers
+        // point at a mixed-list row with IsBoard=true.
         if (!slot->IsBoard)
         {
             Plugin.Debug("Skip delete: Folder points at a named folder; that board is already inside it.");
@@ -360,14 +430,9 @@ public static unsafe partial class TofuImporter
         var realFoldersBefore = CountRealFolders(tofu);
         var boardsBefore = tofu->TotalItemCount(TofuType.Saved, TofuItem.Board);
         var mixed = (uint)slot->PositionInList;
-        Plugin.Debug($"DeleteItemAndContents mixedPos={mixed} folderUi={folderId} boards={boardsBefore} realFolders={realFoldersBefore}");
+        Plugin.Debug($"DeleteItemAndContents mixedPos={mixed} folderIdx={folderId} boards={boardsBefore} realFolders={realFoldersBefore}");
 
         var deleted = tofu->DeleteItemAndContents(TofuType.Saved, mixed);
-        if (!deleted && mixed != folderId)
-        {
-            Plugin.Debug("Delete at PositionInList failed; trying folder UI index.");
-            deleted = tofu->DeleteItemAndContents(TofuType.Saved, folderId);
-        }
 
         if (!deleted)
         {

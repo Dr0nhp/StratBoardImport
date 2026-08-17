@@ -116,12 +116,9 @@ public sealed partial class MainWindow
 
         var rootIds = new List<string> { "lib" };
         rootIds.AddRange(packIds);
-        if (!libraryChecked.Contains("lib") && packIds.Count == 0)
-        {
-            // empty root id is only for the checkbox grouping
-        }
 
-        DrawTreeCheckbox("lib", Loc.Get(L.UiLibraryPlugin), rootIds, ImGuiTreeNodeFlags.DefaultOpen);
+        if (!DrawTreeCheckbox("lib", Loc.Get(L.UiLibraryPlugin), rootIds, ImGuiTreeNodeFlags.DefaultOpen))
+            return;
 
         if (plugin.Library.Packs.Count == 0)
         {
@@ -178,7 +175,7 @@ public sealed partial class MainWindow
     private bool DrawTreeCheckbox(string id, string label, List<string> subtreeIds, ImGuiTreeNodeFlags extra)
     {
         ImGui.PushID(id);
-        var flags = ImGuiTreeNodeFlags.SpanAvailWidth | extra;
+        var flags = ImGuiTreeNodeFlags.OpenOnArrow | ImGuiTreeNodeFlags.FramePadding | extra;
         var open = ImGui.TreeNodeEx("##node", flags);
         ImGui.SameLine();
         DrawNodeCheckbox(id, label, subtreeIds);
@@ -189,7 +186,8 @@ public sealed partial class MainWindow
     private void DrawLeafCheckbox(string id, string label)
     {
         ImGui.PushID(id);
-        ImGui.Dummy(new Vector2(ImGui.GetTreeNodeToLabelSpacing(), 0));
+        ImGui.AlignTextToFramePadding();
+        ImGui.Dummy(new Vector2(ImGui.GetTreeNodeToLabelSpacing(), 1));
         ImGui.SameLine();
         DrawNodeCheckbox(id, label, [id]);
         ImGui.PopID();

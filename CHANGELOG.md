@@ -6,6 +6,10 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 ## Unreleased
 
+## 1.5.1.0
+
+- Bugfix - Folder import copies into the named folder; CreateBoard no longer spawns an empty folder per page
+
 ## 1.5.0.0
 
 - Feature - Settings include a developer log you can copy after an import

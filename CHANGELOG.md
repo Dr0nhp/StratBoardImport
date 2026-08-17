@@ -8,7 +8,7 @@ Code commits stay detailed. This file is the at-a-glance list.
 
 - Change - Dalamud installer uses the SB+ drawing as plugin icon and cover image
 - Docs - Versioning (`Y.X.A.B`), `stable` / `dev` branches, and a separate beta install URL
-- Docs - `main` is frozen; development and betas use `dev`
+- Docs - `main` is gone; development and betas use `dev`
 
 ## 1.6.1.0
 

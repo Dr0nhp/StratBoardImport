@@ -30,7 +30,7 @@ Example: **1.6.1.0** is Dalamud API 1, feature 6 (Library), first bugfix of that
 | **`stable`** | Last version we called good. Protect this on GitHub. Installers that use `releases/latest` track this. |
 | **`dev`** | Development and betas. All new work and bug hunts land here. |
 
-Do not use **`main`**. Leave it frozen. On GitHub, set the default branch to **`dev`**.
+GitHub’s default branch is **`dev`**.
 
 After a bugfix on `dev` is proven in game, merge it into **`stable`**. Unfinished work stays on `dev` and ships as **beta**.
 
@@ -116,7 +116,7 @@ The GitHub repository must be **public**. Dalamud cannot download a zip from a p
 
 Stable — merge proven `dev` into `stable`, then tag without `-beta`:
 
-```powershell
+```bash
 git checkout stable
 git merge dev
 git push origin stable
@@ -126,7 +126,7 @@ git push origin v1.6.2.0
 
 Beta — tag from `dev`:
 
-```powershell
+```bash
 git checkout dev
 git tag v1.6.2.0-beta
 git push origin v1.6.2.0-beta
